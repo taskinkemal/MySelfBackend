@@ -59,12 +59,11 @@ namespace WebApplication
             services.AddMvc();
 
             services.AddDbContext<MyselfContext>(options => options.UseSqlServer(Configuration.GetSection("AppSettings").GetValue<string>("ConnectionString")));
+            //services.AddDbContext<MyselfContext>(options => options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             InjectDependencies(services);
-
-            //AddSwaggerGen(services);
         }
 
         private void InjectDependencies(IServiceCollection services)
