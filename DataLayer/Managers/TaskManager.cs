@@ -55,8 +55,6 @@ namespace DataLayer.Managers
                 existingTask.GoalTimeFrame = task.GoalTimeFrame;
 
                 await Context.SaveChangesAsync().ConfigureAwait(false);
-
-                return true;
             }
             else
             {
@@ -64,7 +62,7 @@ namespace DataLayer.Managers
                 await Context.Tasks.AddAsync(task).ConfigureAwait(false);
             }
 
-            return false;
+            return true;
         }
 
         /// <summary>

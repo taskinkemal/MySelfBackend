@@ -1,9 +1,14 @@
 ﻿using System;
+using System.IO;
+using System.Net;
 using System.Text;
 using Common;
 using Common.Models;
 using DataLayer.Context;
 using DataLayer.Interfaces;
+using Google.Apis.Auth;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 
 namespace DataLayer.Managers
@@ -56,7 +61,12 @@ namespace DataLayer.Managers
         /// <returns></returns>
         public async System.Threading.Tasks.Task<int> VerifyFacebookUserAsync(string email, string accessToken)
         {
-            return 1;
+            if (await VerifyFacebookAccessToken(email, accessToken))
+            {
+                return Context.Users.FirstOrDefaultAsync(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase))?.Id ?? -1;
+            }
+
+            return -1;
         }
 
 
@@ -68,7 +78,12 @@ namespace DataLayer.Managers
         /// <returns></returns>
         public async System.Threading.Tasks.Task<int> VerifyGoogleUserAsync(string email, string accessToken)
         {
-            return 1;
+            if (await VerifyGoogleAccessToken(email, accessToken))
+            {
+                return Context.Users.FirstOrDefaultAsync(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase))?.Id ?? -1;
+            }
+
+            return -1;
         }
 
 
@@ -80,6 +95,57 @@ namespace DataLayer.Managers
                 sb.Append(Alphabet[rand.Next(Alphabet.Length)]);
 
             return sb.ToString();
+        }
+
+        private async System.Threading.Tasks.Task<bool> VerifyGoogleAccessToken(string email, string accessToken)
+        {
+            var payload = await GoogleJsonWebSignature.ValidateAsync(accessToken);
+
+            return email.Equals(payload?.Email, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private async System.Threading.Tasks.Task<bool> VerifyFacebookAccessToken(string email, string accessToken)
+        {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(accessToken))
+            {
+                return false;
+            }
+
+            var facebookGraphUrl = "https://graph.facebook.com/me?fields=id,name,first_name,last_name,email,gender,birthday,picture&access_token=" + accessToken;
+            var request = WebRequest.Create(facebookGraphUrl);
+            request.Credentials = CredentialCache.DefaultCredentials;
+
+            using (var response = await request.GetResponseAsync())
+            {
+                var status = ((HttpWebResponse)response).StatusCode;
+
+                if (status == HttpStatusCode.OK)
+                {
+                    var dataStream = response.GetResponseStream();
+
+                    if (dataStream != null)
+                    {
+                        var reader = new StreamReader(dataStream);
+                        var responseFromServer = reader.ReadToEnd();
+                        var facebookUser = JsonConvert.DeserializeObject<FacebookMeResponse>(responseFromServer);
+
+                        return email.Equals(facebookUser?.Email, StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public class FacebookMeResponse
+        {
+            /// <summary>
+            /// 
+            /// </summary>
+            public string Email { get; set; }
         }
     }
 }

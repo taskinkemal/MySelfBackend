@@ -72,6 +72,7 @@ namespace WebApplication
 
             services.AddScoped<IAuthManager, AuthManager>();
             services.AddScoped<ITaskManager, TaskManager>();
+            services.AddScoped<IEntryManager, EntryManager>();
         }
 
         /// <summary>
