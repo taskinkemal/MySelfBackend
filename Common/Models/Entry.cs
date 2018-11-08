@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System;
+using System.Runtime.Serialization;
 
 
 namespace Common.Models
@@ -26,5 +27,11 @@ namespace Common.Models
         /// </summary>
         [DataMember]
         public int Value { get; set; }
+        
+        /// <summary>
+        /// Insert / last update date
+        /// </summary>
+        [DataMember]
+        public DateTime ModificationDate { get; set; }
     }
 }

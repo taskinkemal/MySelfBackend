@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using Common;
+using Common.Interfaces;
 using Common.Models;
 using DataLayer.Context;
 using DataLayer.Interfaces;
@@ -19,12 +21,17 @@ namespace DataLayer.Managers
     public class AuthManager : ManagerBase, IAuthManager
     {
         private const string Alphabet = "abcdefghijklmnoqprsqtuwxyz";
+        private readonly ILogManager logManager;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="context"></param>
-        public AuthManager(MyselfContext context) : base(context) { }
+        /// <param name="logManager"></param>
+        public AuthManager(MyselfContext context, ILogManager logManager) : base(context)
+        {
+            this.logManager = logManager;
+        }
 
         /// <summary>
         /// 
@@ -63,7 +70,7 @@ namespace DataLayer.Managers
         {
             if (await VerifyFacebookAccessToken(email, accessToken))
             {
-                return Context.Users.FirstOrDefaultAsync(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase))?.Id ?? -1;
+                return await GetUserIdFromEmail(email);
             }
 
             return -1;
@@ -80,10 +87,38 @@ namespace DataLayer.Managers
         {
             if (await VerifyGoogleAccessToken(email, accessToken))
             {
-                return Context.Users.FirstOrDefaultAsync(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase))?.Id ?? -1;
+                return await GetUserIdFromEmail(email);
             }
 
             return -1;
+        }
+
+        private async System.Threading.Tasks.Task<int> GetUserIdFromEmail(string email)
+        {
+            var list = await Context.Users.Where(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase)).ToListAsync().ConfigureAwait(false);
+            
+            if (list.Count > 0)
+            {
+                return list[0].Id;
+            }
+
+            var userId = await InsertUserAsync(email);
+
+            return userId;
+        }
+
+        private async System.Threading.Tasks.Task<int> InsertUserAsync(string email)
+        {
+            var user = await Context.Users.AddAsync(new User
+            {
+                FirstName = "",
+                LastName = "",
+                Email = email
+            });
+
+            await Context.SaveChangesAsync().ConfigureAwait(false);
+
+            return user.Entity.Id;
         }
 
 
@@ -112,26 +147,34 @@ namespace DataLayer.Managers
             }
 
             var facebookGraphUrl = "https://graph.facebook.com/me?fields=id,name,first_name,last_name,email,gender,birthday,picture&access_token=" + accessToken;
-            var request = WebRequest.Create(facebookGraphUrl);
-            request.Credentials = CredentialCache.DefaultCredentials;
 
-            using (var response = await request.GetResponseAsync())
+            try
             {
-                var status = ((HttpWebResponse)response).StatusCode;
+                var request = WebRequest.Create(facebookGraphUrl);
+                request.Credentials = CredentialCache.DefaultCredentials;
 
-                if (status == HttpStatusCode.OK)
+                using (var response = await request.GetResponseAsync())
                 {
-                    var dataStream = response.GetResponseStream();
+                    var status = ((HttpWebResponse)response).StatusCode;
 
-                    if (dataStream != null)
+                    if (status == HttpStatusCode.OK)
                     {
-                        var reader = new StreamReader(dataStream);
-                        var responseFromServer = reader.ReadToEnd();
-                        var facebookUser = JsonConvert.DeserializeObject<FacebookMeResponse>(responseFromServer);
+                        var dataStream = response.GetResponseStream();
 
-                        return email.Equals(facebookUser?.Email, StringComparison.OrdinalIgnoreCase);
+                        if (dataStream != null)
+                        {
+                            var reader = new StreamReader(dataStream);
+                            var responseFromServer = reader.ReadToEnd();
+                            var facebookUser = JsonConvert.DeserializeObject<FacebookMeResponse>(responseFromServer);
+
+                            return email.Equals(facebookUser?.Email, StringComparison.OrdinalIgnoreCase);
+                        }
                     }
                 }
+            }
+            catch (WebException e)
+            {
+                logManager.AddLog(e, "AuthManager.VerifyFacebookAccessToken");
             }
 
             return false;

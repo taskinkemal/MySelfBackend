@@ -23,7 +23,7 @@ namespace DataLayer.Interfaces
         /// <param name="userId"></param>
         /// <param name="task"></param>
         /// <returns></returns>
-        System.Threading.Tasks.Task<bool> AddOrUpdateTask(int userId, Task task);
+        System.Threading.Tasks.Task<int> AddOrUpdateTask(int userId, Task task);
 
         /// <summary>
         /// 

@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Threading.Tasks;
+using Common.Extensions;
+using Common.Models;
 using DataLayer.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using WebCommon.BaseControllers;
@@ -28,9 +27,11 @@ namespace WebApplication.Controllers
         /// </summary>
         /// <returns>List of tasks.</returns>
         [HttpGet]
-        public Task<List<Common.Models.Task>> Get()
+        public async Task<GenericCollection<Common.Models.Task>> Get()
         {
-            return taskManager.GetTasks(Token.UserID);
+            var list = await taskManager.GetTasks(Token.UserID).ConfigureAwait(false);
+
+            return list.ToCollection();
         }
 
         /// <summary>
@@ -43,8 +44,8 @@ namespace WebApplication.Controllers
         {
             var result = await taskManager.AddOrUpdateTask(Token.UserID, data);
 
-            var response = result ?
-                CreateResponse(true) :
+            var response = result > -1 ?
+                CreateResponse(result) :
                 CreateErrorResponse(HttpStatusCode.InternalServerError, "UpdateFailed", "Task cannot be updated.");
 
             return response;

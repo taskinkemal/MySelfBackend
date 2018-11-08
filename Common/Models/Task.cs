@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System;
+using System.Runtime.Serialization;
 
 
 namespace Common.Models
@@ -66,5 +67,11 @@ namespace Common.Models
         /// Task status (0: deleted, 1: active)
         /// </summary>
         public int Status { get; set; }
+        
+        /// <summary>
+        /// Insert / last update date
+        /// </summary>
+        [DataMember]
+        public DateTime ModificationDate { get; set; }
     }
 }

@@ -26,6 +26,14 @@ namespace DataLayer.Context
 
             modelBuilder.Entity<User>()
                 .HasKey(c => c.Id);
+
+            modelBuilder.Entity<Task>()
+                .Property(b => b.ModificationDate)
+                .HasDefaultValueSql("getdate()");
+
+            modelBuilder.Entity<Entry>()
+                .Property(b => b.ModificationDate)
+                .HasDefaultValueSql("getdate()");
         }
 
         public DbSet<Task> Tasks { get; set; }

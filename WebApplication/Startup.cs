@@ -12,6 +12,7 @@ using Common.Managers;
 using DataLayer.Context;
 using DataLayer.Interfaces;
 using DataLayer.Managers;
+using Newtonsoft.Json.Serialization;
 
 
 namespace WebApplication
@@ -56,7 +57,9 @@ namespace WebApplication
 
             services.AddSignalR();
 
-            services.AddMvc();
+            services
+                .AddMvc()
+                .AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
 
             services.AddDbContext<MyselfContext>(options => options.UseSqlServer(Configuration.GetSection("AppSettings").GetValue<string>("ConnectionString")));
             //services.AddDbContext<MyselfContext>(options => options.UseInMemoryDatabase(Guid.NewGuid().ToString()));

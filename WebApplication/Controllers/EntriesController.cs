@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
+using Common.Extensions;
 using Common.Models;
 using DataLayer.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -29,9 +30,11 @@ namespace WebApplication.Controllers
         /// <param name="end">End date</param>
         /// <returns>List of entries.</returns>
         [HttpGet]
-        public Task<List<Entry>> Get(int start, int end)
+        public async Task<GenericCollection<Entry>> Get(int start, int end)
         {
-            return entryManager.GetEntries(Token.UserID, start, end);
+            var list = await entryManager.GetEntries(Token.UserID, start, end).ConfigureAwait(false);
+
+            return list.ToCollection();
         }
 
         /// <summary>

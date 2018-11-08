@@ -1,4 +1,5 @@
-﻿using Common.Models;
+﻿using System;
+using Common.Models;
 using DataLayer.Context;
 using DataLayer.Interfaces;
 using System.Collections.Generic;
@@ -52,7 +53,13 @@ namespace DataLayer.Managers
 
                 if (existingEntry != null)
                 {
+                    //if (existingEntry.ModificationDate > entry.ModificationDate)
+                    //{
+                    //    return false;
+                    //}
+
                     existingEntry.Value = entry.Value;
+                    existingEntry.ModificationDate = DateTime.Now;
 
                     await Context.SaveChangesAsync().ConfigureAwait(false);
                 }
@@ -64,6 +71,8 @@ namespace DataLayer.Managers
                         TaskId = entry.TaskId,
                         Value = entry.Value
                     }).ConfigureAwait(false);
+
+                    await Context.SaveChangesAsync().ConfigureAwait(false);
                 }
 
                 return true;

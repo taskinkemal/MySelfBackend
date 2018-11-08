@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Common.Models;
 using DataLayer.Context;
@@ -35,7 +36,7 @@ namespace DataLayer.Managers
         /// <param name="userId"></param>
         /// <param name="task"></param>
         /// <returns></returns>
-        public async System.Threading.Tasks.Task<bool> AddOrUpdateTask(int userId, Task task)
+        public async System.Threading.Tasks.Task<int> AddOrUpdateTask(int userId, Task task)
         {
             var existingTask = await Context.Tasks.FindAsync(task.Id).ConfigureAwait(false);
 
@@ -43,8 +44,13 @@ namespace DataLayer.Managers
             {
                 if (existingTask.UserId != userId)
                 {
-                    return false;
+                    return -1;
                 }
+
+                //if (existingTask.ModificationDate > task.ModificationDate)
+                //{
+                //    return -1;
+                //}
 
                 existingTask.Label = task.Label;
                 existingTask.DataType = task.DataType;
@@ -53,16 +59,22 @@ namespace DataLayer.Managers
                 existingTask.Goal = task.Goal;
                 existingTask.GoalMinMax = task.GoalMinMax;
                 existingTask.GoalTimeFrame = task.GoalTimeFrame;
+                existingTask.ModificationDate = DateTime.Now;
 
                 await Context.SaveChangesAsync().ConfigureAwait(false);
+
+                return existingTask.Id;
             }
             else
             {
                 task.UserId = userId;
-                await Context.Tasks.AddAsync(task).ConfigureAwait(false);
-            }
+                task.Status = 1;
+                var result = await Context.Tasks.AddAsync(task).ConfigureAwait(false);
 
-            return true;
+                await Context.SaveChangesAsync().ConfigureAwait(false);
+
+                return result.Entity.Id;
+            }
         }
 
         /// <summary>

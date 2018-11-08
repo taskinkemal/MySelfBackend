@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using WebCommon.Attributes;
 using System.Net;
 using Common;
 using Common.Models;
+using System.Linq;
 
 namespace WebCommon.BaseControllers
 {
@@ -26,10 +28,15 @@ namespace WebCommon.BaseControllers
         /// <returns></returns>
         protected static JsonResult CreateResponse<T>(T result)
         {
-            return new JsonResult(result)
-            {
-                StatusCode = (int)HttpStatusCode.OK
-            };
+            return IsSimpleType(typeof(T))
+                ? new JsonResult(GenericWrapper<T>.Wrap(result))
+                {
+                    StatusCode = (int)HttpStatusCode.OK
+                }
+                : new JsonResult(result)
+                {
+                    StatusCode = (int)HttpStatusCode.OK
+                };
         }
 
         /// <summary>
@@ -45,6 +52,24 @@ namespace WebCommon.BaseControllers
             {
                 StatusCode = (int)statusCode
             };
+        }
+
+        private static bool IsSimpleType(Type type)
+        {
+            return
+                type.IsPrimitive ||
+                new [] {
+                    typeof(Enum),
+                    typeof(string),
+                    typeof(decimal),
+                    typeof(DateTime),
+                    typeof(DateTimeOffset),
+                    typeof(TimeSpan),
+                    typeof(Guid)
+                }.Contains(type) ||
+                Convert.GetTypeCode(type) != TypeCode.Object ||
+                (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>) && IsSimpleType(type.GetGenericArguments()[0]))
+                ;
         }
     }
 }
