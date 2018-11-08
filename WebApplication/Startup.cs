@@ -55,14 +55,15 @@ namespace WebApplication
                     .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
             }));
 
-            services.AddSignalR();
-
             services
                 .AddMvc()
                 .AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
 
-            services.AddDbContext<MyselfContext>(options => options.UseSqlServer(Configuration.GetSection("AppSettings").GetValue<string>("ConnectionString")));
             //services.AddDbContext<MyselfContext>(options => options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
+            if (Configuration.GetSection("AppSettings").GetValue<bool>("IsSqLite")) 
+                services.AddDbContext<MyselfContext>(options => options.UseSqlite($"Data Source={AppContext.BaseDirectory}/myself.db"));
+            else
+                services.AddDbContext<MyselfContext>(options => options.UseSqlServer(Configuration.GetSection("AppSettings").GetValue<string>("ConnectionString")));
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
@@ -94,7 +95,7 @@ namespace WebApplication
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
 
             app.UseStaticFiles();
 
@@ -106,6 +107,16 @@ namespace WebApplication
                     "default",
                     "api/{controller}/{id?}");
             });
+
+            if (Configuration.GetSection("AppSettings").GetValue<bool>("IsSqLite"))
+            {
+                using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+                {
+                    var context = serviceScope.ServiceProvider.GetRequiredService<MyselfContext>();
+                    //context.Database.EnsureDeleted();
+                    context.Database.EnsureCreated();
+                }
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
-﻿using Common.Models.Entities;
+﻿using Common;
+using Common.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace DataLayer.Context
 {
@@ -8,16 +10,21 @@ namespace DataLayer.Context
     /// </summary>
     public class MyselfContext : DbContext
     {
+        private readonly IOptions<AppSettings> settings;
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="options"></param>
-        public MyselfContext(DbContextOptions<MyselfContext> options) : base(options)
+        public MyselfContext(DbContextOptions<MyselfContext> options, IOptions<AppSettings> settings) : base(options)
         {
+            this.settings = settings;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            var date = settings.Value.IsSqLite ? "datetime('now')" : "getdate()";
+
             modelBuilder.Entity<Task>()
                 .HasKey(c => c.Id);
 
@@ -31,12 +38,12 @@ namespace DataLayer.Context
                 .HasKey(c => new { c.UserId, c.DeviceId });
 
             modelBuilder.Entity<Task>()
-                .Property(b => b.ModificationDate)
-                .HasDefaultValueSql("getdate()");
+                        .Property(b => b.ModificationDate)
+                        .HasDefaultValueSql(date);
 
             modelBuilder.Entity<Entry>()
-                .Property(b => b.ModificationDate)
-                .HasDefaultValueSql("getdate()");
+                        .Property(b => b.ModificationDate)
+                        .HasDefaultValueSql(date);
         }
 
         public DbSet<Task> Tasks { get; set; }
