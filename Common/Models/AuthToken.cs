@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.Serialization;
+using System.Text;
 
 
 namespace Common.Models
@@ -11,6 +12,7 @@ namespace Common.Models
     public class AuthToken
     {
         private readonly int userID;
+        private const string Alphabet = "abcdefghijklmnoqprsqtuwxyz";
 
         /// <summary>
         /// 
@@ -43,7 +45,18 @@ namespace Common.Models
 
         public const string DateTimeFormat = "yyyy-mm-dd";
 
-        private static void DecryptToken(string token, out int userID, out DateTime validUntil)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="userID"></param>
+        /// <returns></returns>
+        public static AuthToken GenerateToken(int userID)
+        {
+            var validUntil = DateTime.Now.AddYears(1);
+            return new AuthToken(new SimpleAES().EncryptToString(userID + "_" + GenerateRandomString(50) + "_" + validUntil.ToString(DateTimeFormat)), validUntil);
+        }
+
+        public static bool DecryptToken(string token, out int userID, out DateTime validUntil)
         {
             userID = -1;
             validUntil = DateTime.MinValue;
@@ -60,6 +73,18 @@ namespace Common.Models
                     validUntil = Convertor.ToDateTime(parts[2], DateTime.MinValue, DateTimeFormat);
                 }
             }
+
+            return userID > -1 && validUntil > DateTime.Now;
+        }
+
+        private static string GenerateRandomString(int length)
+        {
+            var rand = new Random(DateTime.Now.Millisecond);
+            var sb = new StringBuilder();
+            for (var i = 0; i < length; i++)
+                sb.Append(Alphabet[rand.Next(Alphabet.Length)]);
+
+            return sb.ToString();
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using Common.Interfaces;
+﻿using Common.Interfaces;
 using Common.Models;
 
 
@@ -13,17 +12,10 @@ namespace DataLayer.Interfaces
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="userID"></param>
-        /// <param name="validUntil"></param>
+        /// <param name="accessToken"></param>
+        /// <param name="userId"></param>
         /// <returns></returns>
-        AuthToken GenerateToken(int userID, DateTime validUntil);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        bool IsTokenValid(AuthToken token);
+        bool VerifyAccessToken(string accessToken, out int userId);
 
         /// <summary>
         /// 

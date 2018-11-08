@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Threading.Tasks;
 using Common.Models;
 using DataLayer.Interfaces;
@@ -27,6 +26,25 @@ namespace WebApplication.Controllers
         }
 
         /// <summary>
+        /// Verifies the token and returns a new one.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns>Access token.</returns>
+        [HttpPost("/api/Token/Refresh")]
+        public JsonResult PostRefreshToken([FromBody]TokenRefreshRequest data)
+        {
+            if (!string.IsNullOrWhiteSpace(data?.AccessToken))
+            {
+                if (authManager.VerifyAccessToken(data.AccessToken, out var userId))
+                {
+                    return CreateResponse(AuthToken.GenerateToken(userId));
+                }
+            }
+
+            return CreateErrorResponse(HttpStatusCode.Unauthorized, "InvalidCredentials", /*Resources.errLogin_General*/ "A general error has occured.");
+        }
+
+        /// <summary>
         /// Generates and returns an access token for user.
         /// </summary>
         /// <param name="data"></param>
@@ -47,10 +65,7 @@ namespace WebApplication.Controllers
 
             if (isValidated)
             {
-                var validUntil = DateTime.Now.AddYears(1);
-                var token = authManager.GenerateToken(userID, validUntil);
-
-                response = CreateResponse(token);
+                response = CreateResponse(AuthToken.GenerateToken(userID));
             }
             else
             {
@@ -81,10 +96,7 @@ namespace WebApplication.Controllers
 
             if (isValidated)
             {
-                var validUntil = DateTime.Now.AddYears(1);
-                var token = authManager.GenerateToken(userID, validUntil);
-
-                response = CreateResponse(token);
+                response = CreateResponse(AuthToken.GenerateToken(userID));
             }
             else
             {

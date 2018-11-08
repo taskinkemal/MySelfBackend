@@ -2,8 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
-using Common;
 using Common.Interfaces;
 using Common.Models;
 using DataLayer.Context;
@@ -20,7 +18,6 @@ namespace DataLayer.Managers
     /// </summary>
     public class AuthManager : ManagerBase, IAuthManager
     {
-        private const string Alphabet = "abcdefghijklmnoqprsqtuwxyz";
         private readonly ILogManager logManager;
 
         /// <summary>
@@ -36,28 +33,13 @@ namespace DataLayer.Managers
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="userID"></param>
-        /// <param name="validUntil"></param>
+        /// <param name="accessToken"></param>
+        /// <param name="userId"></param>
         /// <returns></returns>
-        public AuthToken GenerateToken(int userID, DateTime validUntil)
+        public bool VerifyAccessToken(string accessToken, out int userId)
         {
-            return new AuthToken(new SimpleAES().EncryptToString(userID + "_" + GenerateRandomString(50) + "_" + validUntil.ToString(AuthToken.DateTimeFormat)), validUntil);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        public bool IsTokenValid(AuthToken token)
-        {
-            //TODO: check from DB.
-            if (token.UserID > -1 && token.ValidUntil > DateTime.Now)
-            {
-                return true;
-            }
-
-            return false;
+            //TODO: check and verify also from the DB.
+            return AuthToken.DecryptToken(accessToken, out userId, out _);
         }
 
         /// <summary>
@@ -119,17 +101,6 @@ namespace DataLayer.Managers
             await Context.SaveChangesAsync().ConfigureAwait(false);
 
             return user.Entity.Id;
-        }
-
-
-        private static string GenerateRandomString(int length)
-        {
-            var rand = new Random(DateTime.Now.Millisecond);
-            var sb = new StringBuilder();
-            for (var i = 0; i < length; i++)
-                sb.Append(Alphabet[rand.Next(Alphabet.Length)]);
-
-            return sb.ToString();
         }
 
         private async System.Threading.Tasks.Task<bool> VerifyGoogleAccessToken(string email, string accessToken)
