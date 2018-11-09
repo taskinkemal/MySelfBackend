@@ -31,13 +31,15 @@ namespace WebApplication.Controllers
         /// <param name="data"></param>
         /// <returns>Access token.</returns>
         [HttpPost("/api/Token/Refresh")]
-        public JsonResult PostRefreshToken([FromBody]TokenRefreshRequest data)
+        public async Task<JsonResult> PostRefreshToken([FromBody]TokenRefreshRequest data)
         {
             if (!string.IsNullOrWhiteSpace(data?.AccessToken))
             {
-                if (authManager.VerifyAccessToken(data.AccessToken, out var userId))
+                var userToken = authManager.VerifyAccessToken(data.AccessToken);
+                if (userToken != null)
                 {
-                    return CreateResponse(AuthToken.GenerateToken(userId));
+                    var result = await authManager.GenerateTokenAsync(userToken.UserId, data.DeviceID);
+                    return CreateResponse(result);
                 }
             }
 
@@ -65,7 +67,8 @@ namespace WebApplication.Controllers
 
             if (isValidated)
             {
-                response = CreateResponse(AuthToken.GenerateToken(userID));
+                var result = await authManager.GenerateTokenAsync(userID, data.DeviceID);
+                response = CreateResponse(result);
             }
             else
             {
@@ -96,7 +99,8 @@ namespace WebApplication.Controllers
 
             if (isValidated)
             {
-                response = CreateResponse(AuthToken.GenerateToken(userID));
+                var result = await authManager.GenerateTokenAsync(userID, data.DeviceID);
+                response = CreateResponse(result);
             }
             else
             {

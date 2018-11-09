@@ -2,7 +2,7 @@
 using System.Runtime.Serialization;
 
 
-namespace Common.Models
+namespace Common.Models.Entities
 {
     /// <summary>
     /// Entry

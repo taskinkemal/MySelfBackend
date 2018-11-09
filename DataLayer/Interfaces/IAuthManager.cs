@@ -1,5 +1,6 @@
 ﻿using Common.Interfaces;
 using Common.Models;
+using Common.Models.Entities;
 
 
 namespace DataLayer.Interfaces
@@ -13,9 +14,8 @@ namespace DataLayer.Interfaces
         /// 
         /// </summary>
         /// <param name="accessToken"></param>
-        /// <param name="userId"></param>
         /// <returns></returns>
-        bool VerifyAccessToken(string accessToken, out int userId);
+        UserToken VerifyAccessToken(string accessToken);
 
         /// <summary>
         /// 
@@ -32,5 +32,13 @@ namespace DataLayer.Interfaces
         /// <param name="accessToken"></param>
         /// <returns></returns>
         System.Threading.Tasks.Task<int> VerifyGoogleUserAsync(string email, string accessToken);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="deviceId"></param>
+        /// <returns></returns>
+        System.Threading.Tasks.Task<AuthToken> GenerateTokenAsync(int userId, string deviceId);
     }
 }

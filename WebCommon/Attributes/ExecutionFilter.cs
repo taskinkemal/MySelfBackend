@@ -119,9 +119,10 @@ namespace WebCommon.Attributes
             {
                 if (context.Controller is BaseController apiController)
                 {
-                    if (authManager.VerifyAccessToken(accessToken, out var userId))
+                    var userToken = authManager.VerifyAccessToken(accessToken);
+                    if (userToken != null)
                     {
-                        apiController.Token = AuthToken.GenerateToken(userId);
+                        apiController.Token = AuthToken.FromUserToken(userToken);
                     }
                     else
                     {

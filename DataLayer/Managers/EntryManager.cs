@@ -1,5 +1,5 @@
 ﻿using System;
-using Common.Models;
+using Common.Models.Entities;
 using DataLayer.Context;
 using DataLayer.Interfaces;
 using System.Collections.Generic;

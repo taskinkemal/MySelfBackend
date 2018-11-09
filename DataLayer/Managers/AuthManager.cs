@@ -2,8 +2,10 @@
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using Common.Interfaces;
 using Common.Models;
+using Common.Models.Entities;
 using DataLayer.Context;
 using DataLayer.Interfaces;
 using Google.Apis.Auth;
@@ -19,6 +21,7 @@ namespace DataLayer.Managers
     public class AuthManager : ManagerBase, IAuthManager
     {
         private readonly ILogManager logManager;
+        private const string Alphabet = "abcdefghijklmnoqprsqtuwxyz0123456789.";
 
         /// <summary>
         /// 
@@ -34,12 +37,53 @@ namespace DataLayer.Managers
         /// 
         /// </summary>
         /// <param name="accessToken"></param>
-        /// <param name="userId"></param>
         /// <returns></returns>
-        public bool VerifyAccessToken(string accessToken, out int userId)
+        public UserToken VerifyAccessToken(string accessToken)
         {
-            //TODO: check and verify also from the DB.
-            return AuthToken.DecryptToken(accessToken, out userId, out _);
+            return Context.UserTokens.FirstOrDefault(t =>
+                t.Token.Equals(accessToken, StringComparison.OrdinalIgnoreCase) &&
+                t.ValidUntil > DateTime.Now);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="deviceId"></param>
+        /// <returns></returns>
+        public async System.Threading.Tasks.Task<AuthToken> GenerateTokenAsync(int userId, string deviceId)
+        {
+            AuthToken result;
+
+            var existingToken = await Context.UserTokens.FindAsync(userId, deviceId).ConfigureAwait(false);
+
+            if (existingToken != null)
+            {
+                existingToken.ValidUntil = DateTime.Now.AddYears(1);
+                existingToken.Token = GenerateToken(userId);
+
+                await Context.SaveChangesAsync().ConfigureAwait(false);
+
+                result = AuthToken.FromUserToken(existingToken);
+            }
+            else
+            {
+                var newToken = new UserToken
+                {
+                    UserId = userId,
+                    DeviceId = deviceId,
+                    Token = GenerateToken(userId),
+                    ValidUntil = DateTime.Now.AddYears(1)
+                };
+
+                await Context.UserTokens.AddAsync(newToken).ConfigureAwait(false);
+
+                await Context.SaveChangesAsync().ConfigureAwait(false);
+
+                result = AuthToken.FromUserToken(newToken);
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -149,6 +193,21 @@ namespace DataLayer.Managers
             }
 
             return false;
+        }
+
+        private static string GenerateToken(int userID)
+        {
+            return GenerateRandomString(160) + "_" + userID;
+        }
+
+        private static string GenerateRandomString(int length)
+        {
+            var rand = new Random(DateTime.Now.Millisecond);
+            var sb = new StringBuilder();
+            for (var i = 0; i < length; i++)
+                sb.Append(Alphabet[rand.Next(Alphabet.Length)]);
+
+            return sb.ToString();
         }
 
         /// <summary>

@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Net;
+﻿using System.Net;
 using System.Threading.Tasks;
 using Common.Extensions;
 using Common.Models;
+using Common.Models.Entities;
 using DataLayer.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using WebCommon.BaseControllers;

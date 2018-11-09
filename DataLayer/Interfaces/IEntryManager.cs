@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Common.Interfaces;
-using Common.Models;
+using Common.Models.Entities;
 
 
 namespace DataLayer.Interfaces

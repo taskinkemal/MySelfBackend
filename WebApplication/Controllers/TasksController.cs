@@ -27,7 +27,7 @@ namespace WebApplication.Controllers
         /// </summary>
         /// <returns>List of tasks.</returns>
         [HttpGet]
-        public async Task<GenericCollection<Common.Models.Task>> Get()
+        public async Task<GenericCollection<Common.Models.Entities.Task>> Get()
         {
             var list = await taskManager.GetTasks(Token.UserID).ConfigureAwait(false);
 
@@ -40,7 +40,7 @@ namespace WebApplication.Controllers
         /// <param name="data"></param>
         /// <returns>Http response.</returns>
         [HttpPost]
-        public async Task<JsonResult> Post([FromBody]Common.Models.Task data)
+        public async Task<JsonResult> Post([FromBody]Common.Models.Entities.Task data)
         {
             var result = await taskManager.AddOrUpdateTask(Token.UserID, data);
 

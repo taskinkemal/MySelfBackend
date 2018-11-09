@@ -1,4 +1,4 @@
-﻿using Common.Models;
+﻿using Common.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataLayer.Context
@@ -26,6 +26,9 @@ namespace DataLayer.Context
 
             modelBuilder.Entity<User>()
                 .HasKey(c => c.Id);
+            
+            modelBuilder.Entity<UserToken>()
+                .HasKey(c => new { c.UserId, c.DeviceId });
 
             modelBuilder.Entity<Task>()
                 .Property(b => b.ModificationDate)
@@ -39,5 +42,6 @@ namespace DataLayer.Context
         public DbSet<Task> Tasks { get; set; }
         public DbSet<Entry> Entries { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<UserToken> UserTokens { get; set; }
     }
 }
