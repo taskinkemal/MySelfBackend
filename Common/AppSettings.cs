@@ -33,6 +33,11 @@
         /// <summary>
         /// 
         /// </summary>
+        public bool IsSqLite { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public static int MaxRows = 500;
 
 
