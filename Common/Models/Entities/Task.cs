@@ -73,5 +73,17 @@ namespace Common.Models.Entities
         /// </summary>
         [DataMember]
         public DateTime ModificationDate { get; set; }
+
+        /// <summary>
+        /// 1: Call duration, 2: App usage, 3: Wifi network
+        /// </summary>
+        [DataMember]
+        public int? AutomationType { get; set; }
+
+        /// <summary>
+        /// Automation variable (app or wifi identifier)
+        /// </summary>
+        [DataMember]
+        public string AutomationVar { get; set; }
     }
 }
