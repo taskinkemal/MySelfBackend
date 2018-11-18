@@ -27,7 +27,7 @@ namespace DataLayer.Managers
         /// <returns></returns>
         public System.Threading.Tasks.Task<List<Task>> GetTasks(int userId)
         {
-            return Context.Tasks.Where(t => t.UserId == userId && t.Status == 1).ToListAsync();
+            return Context.Tasks.Where(t => t.UserId == userId).ToListAsync();
         }
 
         /// <summary>

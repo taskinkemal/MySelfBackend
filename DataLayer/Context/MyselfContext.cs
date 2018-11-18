@@ -28,6 +28,10 @@ namespace DataLayer.Context
             modelBuilder.Entity<Task>()
                 .HasKey(c => c.Id);
 
+            modelBuilder.Entity<Task>()
+                .Property(p => p.Id)
+                .ValueGeneratedOnAdd();
+
             modelBuilder.Entity<Entry>()
                 .HasKey(c => new { c.Day, c.TaskId });
 

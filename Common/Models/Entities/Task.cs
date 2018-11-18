@@ -66,6 +66,7 @@ namespace Common.Models.Entities
         /// <summary>
         /// Task status (0: deleted, 1: active)
         /// </summary>
+        [DataMember]
         public int Status { get; set; }
         
         /// <summary>
