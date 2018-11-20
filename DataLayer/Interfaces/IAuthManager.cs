@@ -20,18 +20,18 @@ namespace DataLayer.Interfaces
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="email"></param>
+        /// <param name="user"></param>
         /// <param name="accessToken"></param>
         /// <returns></returns>
-        System.Threading.Tasks.Task<int> VerifyFacebookUserAsync(string email, string accessToken);
+        System.Threading.Tasks.Task<int> VerifyFacebookUserAsync(User user, string accessToken);
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="email"></param>
+        /// <param name="user"></param>
         /// <param name="accessToken"></param>
         /// <returns></returns>
-        System.Threading.Tasks.Task<int> VerifyGoogleUserAsync(string email, string accessToken);
+        System.Threading.Tasks.Task<int> VerifyGoogleUserAsync(User user, string accessToken);
 
         /// <summary>
         /// 

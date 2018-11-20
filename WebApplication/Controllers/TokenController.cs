@@ -60,7 +60,7 @@ namespace WebApplication.Controllers
 
             if (!string.IsNullOrWhiteSpace(data?.FacebookToken) && !string.IsNullOrWhiteSpace(data.Email))
             {
-                userID = await authManager.VerifyFacebookUserAsync(data.Email, data.FacebookToken);
+                userID = await authManager.VerifyFacebookUserAsync(data.ToUser(), data.FacebookToken);
 
                 isValidated = userID >= 0;
             }
@@ -92,7 +92,7 @@ namespace WebApplication.Controllers
 
             if (!string.IsNullOrWhiteSpace(data?.GoogleToken) && !string.IsNullOrWhiteSpace(data.Email))
             {
-                userID = await authManager.VerifyGoogleUserAsync(data.Email, data.GoogleToken);
+                userID = await authManager.VerifyGoogleUserAsync(data.ToUser(), data.GoogleToken);
 
                 isValidated = userID >= 0;
             }

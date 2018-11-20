@@ -89,14 +89,14 @@ namespace DataLayer.Managers
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="email"></param>
+        /// <param name="user"></param>
         /// <param name="accessToken"></param>
         /// <returns></returns>
-        public async System.Threading.Tasks.Task<int> VerifyFacebookUserAsync(string email, string accessToken)
+        public async System.Threading.Tasks.Task<int> VerifyFacebookUserAsync(User user, string accessToken)
         {
-            if (await VerifyFacebookAccessToken(email, accessToken))
+            if (await VerifyFacebookAccessToken(user.Email, accessToken))
             {
-                return await GetUserIdFromEmail(email);
+                return await GetUserIdFromEmail(user);
             }
 
             return -1;
@@ -106,45 +106,46 @@ namespace DataLayer.Managers
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="email"></param>
+        /// <param name="user"></param>
         /// <param name="accessToken"></param>
         /// <returns></returns>
-        public async System.Threading.Tasks.Task<int> VerifyGoogleUserAsync(string email, string accessToken)
+        public async System.Threading.Tasks.Task<int> VerifyGoogleUserAsync(User user, string accessToken)
         {
-            if (await VerifyGoogleAccessToken(email, accessToken))
+            if (await VerifyGoogleAccessToken(user.Email, accessToken))
             {
-                return await GetUserIdFromEmail(email);
+                return await GetUserIdFromEmail(user);
             }
 
             return -1;
         }
 
-        private async System.Threading.Tasks.Task<int> GetUserIdFromEmail(string email)
+        private async System.Threading.Tasks.Task<int> GetUserIdFromEmail(User user)
         {
-            var list = await Context.Users.Where(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase)).ToListAsync().ConfigureAwait(false);
+            var list = await Context.Users.Where(u => u.Email.Equals(user.Email, StringComparison.OrdinalIgnoreCase)).ToListAsync().ConfigureAwait(false);
             
             if (list.Count > 0)
             {
                 return list[0].Id;
             }
 
-            var userId = await InsertUserAsync(email);
+            var userId = await InsertUserAsync(user);
 
             return userId;
         }
 
-        private async System.Threading.Tasks.Task<int> InsertUserAsync(string email)
+        private async System.Threading.Tasks.Task<int> InsertUserAsync(User user)
         {
-            var user = await Context.Users.AddAsync(new User
+            var u = await Context.Users.AddAsync(new User
             {
-                FirstName = "",
-                LastName = "",
-                Email = email
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                PictureUrl = user.PictureUrl
             });
 
             await Context.SaveChangesAsync().ConfigureAwait(false);
 
-            return user.Entity.Id;
+            return u.Entity.Id;
         }
 
         private async System.Threading.Tasks.Task<bool> VerifyGoogleAccessToken(string email, string accessToken)
