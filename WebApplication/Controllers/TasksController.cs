@@ -56,7 +56,7 @@ namespace WebApplication.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns>Http response.</returns>
-        [HttpDelete]
+        [HttpDelete("{id}")]
         public async Task<JsonResult> Delete(int id)
         {
             var result = await taskManager.DeleteTask(Token.UserID, id);
