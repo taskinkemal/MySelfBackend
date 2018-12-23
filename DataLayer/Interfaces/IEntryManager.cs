@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Common.Interfaces;
+using Common.Models;
 using Common.Models.Entities;
 
 
@@ -25,6 +26,6 @@ namespace DataLayer.Interfaces
         /// <param name="userId"></param>
         /// <param name="entry"></param>
         /// <returns></returns>
-        System.Threading.Tasks.Task<bool> AddOrUpdateEntry(int userId, Entry entry);
+        System.Threading.Tasks.Task<UploadEntryResponse> AddOrUpdateEntry(int userId, Entry entry);
     }
 }

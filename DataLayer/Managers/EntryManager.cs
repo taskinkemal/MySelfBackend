@@ -5,7 +5,7 @@ using DataLayer.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
-
+using Common.Models;
 
 namespace DataLayer.Managers
 {
@@ -14,7 +14,12 @@ namespace DataLayer.Managers
     /// </summary>
     public class EntryManager : ManagerBase, IEntryManager
     {
-        public EntryManager(MyselfContext context) : base(context) { }
+        private readonly IEnumerable<IBadgeCheck> badgeCheckers;
+
+        public EntryManager(MyselfContext context, IEnumerable<IBadgeCheck> badgeCheckers) : base(context)
+        {
+            this.badgeCheckers = badgeCheckers;
+        }
 
         /// <summary>
         /// 
@@ -39,17 +44,21 @@ namespace DataLayer.Managers
         /// <param name="userId"></param>
         /// <param name="entry"></param>
         /// <returns></returns>
-        public async System.Threading.Tasks.Task<bool> AddOrUpdateEntry(int userId, Entry entry)
+        public async System.Threading.Tasks.Task<UploadEntryResponse> AddOrUpdateEntry(int userId, Entry entry)
         {
             var existingEntry = await Context.Entries.FindAsync(entry.Day, entry.TaskId).ConfigureAwait(false);
             var task = await Context.Tasks.FindAsync(entry.TaskId).ConfigureAwait(false);
+            var user = await Context.Users.FirstOrDefaultAsync(u => u.Id == userId).ConfigureAwait(false);
+            var existingBadges = await Context.UserBadges.Where(u => u.UserId == userId).ToListAsync().ConfigureAwait(false);
 
             if (task != null && task.UserId == userId && entry.Value >= 0)
             {
                 if (task.DataType == 0 && entry.Value > 1)
                 {
-                    return false;
+                    return null;
                 }
+
+                var result = new UploadEntryResponse();
 
                 if (existingEntry != null)
                 {
@@ -60,8 +69,6 @@ namespace DataLayer.Managers
 
                     existingEntry.Value = entry.Value;
                     existingEntry.ModificationDate = DateTime.Now;
-
-                    await Context.SaveChangesAsync().ConfigureAwait(false);
                 }
                 else
                 {
@@ -72,8 +79,60 @@ namespace DataLayer.Managers
                         Value = entry.Value
                     }).ConfigureAwait(false);
 
-                    await Context.SaveChangesAsync().ConfigureAwait(false);
+                    if (user != null)
+                    {
+                        user.Score += 1;
+
+                        Context.Users.Update(user);
+                    }
                 }
+
+                if (user != null)
+                {
+                    result.Score = user.Score;
+                }
+
+                badgeCheckers.Select(async b =>
+                {
+                    var list = await b.GetNewBadges(userId, existingBadges).ConfigureAwait(false);
+
+                    async void action(UserBadge badge)
+                    {
+                        await AddOrUpdateBadgeAsync(userId, badge.BadgeId, badge.Level).ConfigureAwait(false);
+                    }
+                    list.badges.ForEach(action);
+                    user.Score += list.score;
+                    result.Score += list.score;
+
+                    result.NewBadges.AddRange(list.badges);
+                });
+
+                await Context.SaveChangesAsync().ConfigureAwait(false);
+
+                return result;
+            }
+
+            return null;
+        }
+
+        private async System.Threading.Tasks.Task<bool> AddOrUpdateBadgeAsync(int userId, int badgeId, int level)
+        {
+            var existingBadge = await Context.UserBadges.FindAsync(userId, badgeId).ConfigureAwait(false);
+
+            if (existingBadge == null)
+            {
+                await Context.UserBadges.AddAsync(new UserBadge
+                {
+                    UserId = userId,
+                    BadgeId = badgeId,
+                    Level = level
+                }).ConfigureAwait(false);
+
+                return true;
+            }
+            else if (existingBadge.Level < level)
+            {
+                existingBadge.Level = level;
 
                 return true;
             }

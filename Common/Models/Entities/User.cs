@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Common.Models.Entities
 {
@@ -8,6 +9,14 @@ namespace Common.Models.Entities
     [DataContract]
     public class User
     {
+        /// <summary>
+        /// Initializes user entity.
+        /// </summary>
+        public User()
+        {
+            Badges = new List<UserBadge>();
+        }
+
         /// <summary>
         /// User unique id
         /// </summary>
@@ -37,5 +46,17 @@ namespace Common.Models.Entities
         /// </summary>
         [DataMember]
         public string PictureUrl { get; set; }
+
+        /// <summary>
+        /// User gamification score
+        /// </summary>
+        [DataMember]
+        public int Score { get; set; }
+
+        /// <summary>
+        /// User gamification badges
+        /// </summary>
+        [DataMember]
+        public List<UserBadge> Badges { get; set; }
     }
 }

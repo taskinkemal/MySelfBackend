@@ -13,6 +13,7 @@ namespace WebApplication.Controllers
     public class EntriesController : AuthController
     {
         private readonly IEntryManager entryManager;
+        private readonly IUserManager userManager;
 
         /// <summary>
         /// 
@@ -45,13 +46,16 @@ namespace WebApplication.Controllers
         [HttpPost]
         public async Task<JsonResult> Post([FromBody]Entry data)
         {
-            var result = await entryManager.AddOrUpdateEntry(Token.UserID, data);
+            var result = await entryManager.AddOrUpdateEntry(Token.UserID, data).ConfigureAwait(false);
 
-            var response = result ?
-                CreateResponse(true) :
-                CreateErrorResponse(HttpStatusCode.InternalServerError, "UpdateFailed", "Entry cannot be updated.");
-
-            return response;
+            if (result != null)
+            {
+                return CreateResponse(result);
+            }
+            else
+            {
+                return CreateErrorResponse(HttpStatusCode.InternalServerError, "UpdateFailed", "Entry cannot be updated.");
+            }
         }
     }
 }

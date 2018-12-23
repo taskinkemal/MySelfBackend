@@ -13,7 +13,8 @@ using DataLayer.Context;
 using DataLayer.Interfaces;
 using DataLayer.Managers;
 using Newtonsoft.Json.Serialization;
-
+using Newtonsoft.Json;
+using DataLayer.Managers.BadgeCheckers;
 
 namespace WebApplication
 {
@@ -67,6 +68,11 @@ namespace WebApplication
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
+            services.AddMvc().AddJsonOptions(options =>
+            {
+                options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
+            });
+
             InjectDependencies(services);
         }
 
@@ -77,6 +83,11 @@ namespace WebApplication
             services.AddScoped<IAuthManager, AuthManager>();
             services.AddScoped<ITaskManager, TaskManager>();
             services.AddScoped<IEntryManager, EntryManager>();
+            services.AddScoped<IUserManager, UserManager>();
+
+            services.AddScoped<IBadgeCheck, DataEntryCheck>();
+            services.AddScoped<IBadgeCheck, SilverGoalCheck>();
+            services.AddScoped<IBadgeCheck, GoldenGoalCheck>();
         }
 
         /// <summary>

@@ -20,4 +20,7 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Managers\BadgeCheckers\" />
+  </ItemGroup>
 </Project>
