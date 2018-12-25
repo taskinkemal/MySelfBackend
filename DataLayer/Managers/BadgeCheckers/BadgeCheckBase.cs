@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Common.Extensions;
 using Common.Models.Entities;
 using DataLayer.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace DataLayer.Managers.BadgeCheckers
 {
@@ -22,7 +24,8 @@ namespace DataLayer.Managers.BadgeCheckers
 
         protected int GetCurrentLevel(List<UserBadge> existingBadges)
         {
-            return existingBadges.Where(b => b.BadgeId == BadgeId).Max(b => b.Level);
+            var filteredList = existingBadges.Where(b => b.BadgeId == BadgeId).ToList();
+            return filteredList.Count == 0 ? 0 : filteredList.Max(b => b.Level);
         }
 
         protected void AddBadge(List<UserBadge> badges, int userId, int level)
@@ -31,7 +34,8 @@ namespace DataLayer.Managers.BadgeCheckers
             {
                 UserId = userId,
                 BadgeId = BadgeId,
-                Level = level
+                Level = level,
+                ModificationDate = DateTime.Now
             });
         }
     }

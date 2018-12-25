@@ -13,7 +13,6 @@ namespace WebApplication.Controllers
     public class EntriesController : AuthController
     {
         private readonly IEntryManager entryManager;
-        private readonly IUserManager userManager;
 
         /// <summary>
         /// 

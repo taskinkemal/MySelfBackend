@@ -88,21 +88,21 @@ namespace DataLayer.Managers.BadgeCheckers
                           };
 
             var e = await entries.ToListAsync().ConfigureAwait(false);
-            return e.Count == 5;
+            return e.Count >= 5;
         }
 
         private async Task<bool> CheckLevel2(int userId)
         {
             var result = await CheckConsecutiveEntries(userId, 5);
 
-            return result == 5;
+            return result >= 5;
         }
 
         private async Task<bool> CheckLevel3(int userId)
         {
             var result = await CheckConsecutiveEntries(userId, 30);
 
-            return result == 30;
+            return result >= 30;
         }
 
         private async Task<int> CheckConsecutiveEntries(int userId, int days)

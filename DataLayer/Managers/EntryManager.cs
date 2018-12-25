@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Common.Models;
+using Common.Extensions;
 
 namespace DataLayer.Managers
 {
@@ -92,9 +93,20 @@ namespace DataLayer.Managers
                     result.Score = user.Score;
                 }
 
-                badgeCheckers.Select(async b =>
+                var isGoalAchieved = await CheckGoalAchievement(userId, task).ConfigureAwait(false);
+
+                if (isGoalAchieved)
                 {
-                    var list = await b.GetNewBadges(userId, existingBadges).ConfigureAwait(false);
+                    await Context.AchievedGoals.AddAsync(new AchievedGoal
+                    {
+                        TaskId = entry.TaskId,
+                        Day = DateTime.Today.GetDay()
+                    }).ConfigureAwait(false);
+                }
+
+                foreach (var checker in badgeCheckers)
+                {
+                    var list = await checker.GetNewBadges(userId, existingBadges).ConfigureAwait(false);
 
                     async void action(UserBadge badge)
                     {
@@ -105,7 +117,7 @@ namespace DataLayer.Managers
                     result.Score += list.score;
 
                     result.NewBadges.AddRange(list.badges);
-                });
+                }
 
                 await Context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -125,7 +137,8 @@ namespace DataLayer.Managers
                 {
                     UserId = userId,
                     BadgeId = badgeId,
-                    Level = level
+                    Level = level,
+                    ModificationDate = DateTime.Now
                 }).ConfigureAwait(false);
 
                 return true;
@@ -133,11 +146,43 @@ namespace DataLayer.Managers
             else if (existingBadge.Level < level)
             {
                 existingBadge.Level = level;
+                existingBadge.ModificationDate = DateTime.Now;
 
                 return true;
             }
 
             return false;
+        }
+
+        private async System.Threading.Tasks.Task<bool> CheckGoalAchievement(int userId, Task task)
+        {
+            if (!task.HasGoal)
+            {
+                return false;
+            }
+
+            var lastAchievement = await Context.AchievedGoals
+                    .Where(a => a.TaskId == task.Id)
+                    .OrderByDescending(x => x.Day).FirstOrDefaultAsync().ConfigureAwait(false);
+
+            var dayLastAchievement = lastAchievement == null ? 0 : lastAchievement.Day + 1;
+            var today = DateTime.Now.GetDay();
+            var dayStart = task.GoalTimeFrame == 1 ? (today - 1) : task.GoalTimeFrame == 2 ? (today - 7) : DateTime.Now.AddMonths(-1).GetDay();
+            if (dayLastAchievement > dayStart)
+            {
+                return false;
+            }
+
+            var total = await Context.Entries
+                .Where(e => e.TaskId == task.Id && e.Day >= dayStart)
+                .SumAsync(e => e.Value)
+                .ConfigureAwait(false);
+
+            return
+                task.GoalMinMax == 1 && total == task.Goal ||
+                task.GoalMinMax == 2 && total >= task.Goal ||
+                task.GoalMinMax == 3 && total <= task.Goal
+            ;
         }
     }
 }

@@ -41,11 +41,18 @@ namespace DataLayer.Context
             modelBuilder.Entity<UserToken>()
                 .HasKey(c => new { c.UserId, c.DeviceId });
 
+            modelBuilder.Entity<AchievedGoal>()
+                .HasKey(c => new { c.TaskId, c.Day });
+
             modelBuilder.Entity<Task>()
                         .Property(b => b.ModificationDate)
                         .HasDefaultValueSql(date);
 
             modelBuilder.Entity<Entry>()
+                        .Property(b => b.ModificationDate)
+                        .HasDefaultValueSql(date);
+
+            modelBuilder.Entity<UserBadge>()
                         .Property(b => b.ModificationDate)
                         .HasDefaultValueSql(date);
 
@@ -70,5 +77,6 @@ namespace DataLayer.Context
         public DbSet<Badge> Badges { get; set; }
         public DbSet<BadgeLevel> BadgeLevels { get; set; }
         public DbSet<UserBadge> UserBadges { get; set; }
+        public DbSet<AchievedGoal> AchievedGoals { get; set; }
     }
 }
