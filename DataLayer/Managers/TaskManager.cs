@@ -55,10 +55,6 @@ namespace DataLayer.Managers
                 existingTask.Label = task.Label;
                 existingTask.DataType = task.DataType;
                 existingTask.Unit = task.Unit;
-                existingTask.HasGoal = task.HasGoal;
-                existingTask.Goal = task.Goal;
-                existingTask.GoalMinMax = task.GoalMinMax;
-                existingTask.GoalTimeFrame = task.GoalTimeFrame;
                 existingTask.AutomationType = task.AutomationType;
                 existingTask.AutomationVar = task.AutomationVar;
                 existingTask.ModificationDate = DateTime.Now;

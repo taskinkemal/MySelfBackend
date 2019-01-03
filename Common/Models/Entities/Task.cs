@@ -35,30 +35,6 @@ namespace Common.Models.Entities
         public string Unit { get; set; }
 
         /// <summary>
-        /// Whether the task has a goal set or not.
-        /// </summary>
-        [DataMember]
-        public bool HasGoal { get; set; }
-
-        /// <summary>
-        /// 1: exactly, 2: or more, 3: or less
-        /// </summary>
-        [DataMember]
-        public int GoalMinMax { get; set; }
-
-        /// <summary>
-        /// The goal set for the task
-        /// </summary>
-        [DataMember]
-        public int Goal { get; set; }
-
-        /// <summary>
-        /// 1: day, 2: week, 3: month
-        /// </summary>
-        [DataMember]
-        public int GoalTimeFrame { get; set; }
-
-        /// <summary>
         /// Task owner
         /// </summary>
         public int UserId { get; set; }

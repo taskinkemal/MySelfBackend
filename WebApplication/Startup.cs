@@ -84,6 +84,7 @@ namespace WebApplication
             services.AddScoped<ITaskManager, TaskManager>();
             services.AddScoped<IEntryManager, EntryManager>();
             services.AddScoped<IUserManager, UserManager>();
+            services.AddScoped<IGoalManager, GoalManager>();
 
             services.AddScoped<IBadgeCheck, DataEntryCheck>();
             services.AddScoped<IBadgeCheck, SilverGoalCheck>();

@@ -15,10 +15,12 @@ namespace DataLayer.Managers
     /// </summary>
     public class EntryManager : ManagerBase, IEntryManager
     {
+        private readonly IGoalManager goalManager;
         private readonly IEnumerable<IBadgeCheck> badgeCheckers;
 
-        public EntryManager(MyselfContext context, IEnumerable<IBadgeCheck> badgeCheckers) : base(context)
+        public EntryManager(MyselfContext context, IGoalManager goalManager, IEnumerable<IBadgeCheck> badgeCheckers) : base(context)
         {
+            this.goalManager = goalManager;
             this.badgeCheckers = badgeCheckers;
         }
 
@@ -29,14 +31,14 @@ namespace DataLayer.Managers
         /// <param name="start">Start date</param>
         /// <param name="end">End date</param>
         /// <returns></returns>
-        public System.Threading.Tasks.Task<List<Entry>> GetEntries(int userId, int start, int end)
+        public async System.Threading.Tasks.Task<List<Entry>> GetEntries(int userId, int start, int end)
         {
-            var result = from entry in Context.Entries
+            var result = await (from entry in Context.Entries
                          join task in Context.Tasks on entry.TaskId equals task.Id
                          where entry.Day >= start && entry.Day <= end && task.UserId == userId && task.Status == 1
-                         select entry;
+                         select entry).ToListAsync().ConfigureAwait(false);
 
-            return result.ToListAsync();
+            return result;
         }
 
         /// <summary>
@@ -93,16 +95,7 @@ namespace DataLayer.Managers
                     result.Score = user.Score;
                 }
 
-                var isGoalAchieved = await CheckGoalAchievement(userId, task).ConfigureAwait(false);
-
-                if (isGoalAchieved)
-                {
-                    await Context.AchievedGoals.AddAsync(new AchievedGoal
-                    {
-                        TaskId = entry.TaskId,
-                        Day = DateTime.Today.GetDay()
-                    }).ConfigureAwait(false);
-                }
+                await goalManager.CheckGoalAchievements(userId, task.Id).ConfigureAwait(false);
 
                 foreach (var checker in badgeCheckers)
                 {
@@ -152,37 +145,6 @@ namespace DataLayer.Managers
             }
 
             return false;
-        }
-
-        private async System.Threading.Tasks.Task<bool> CheckGoalAchievement(int userId, Task task)
-        {
-            if (!task.HasGoal)
-            {
-                return false;
-            }
-
-            var lastAchievement = await Context.AchievedGoals
-                    .Where(a => a.TaskId == task.Id)
-                    .OrderByDescending(x => x.Day).FirstOrDefaultAsync().ConfigureAwait(false);
-
-            var dayLastAchievement = lastAchievement == null ? 0 : lastAchievement.Day + 1;
-            var today = DateTime.Now.GetDay();
-            var dayStart = task.GoalTimeFrame == 1 ? (today - 1) : task.GoalTimeFrame == 2 ? (today - 7) : DateTime.Now.AddMonths(-1).GetDay();
-            if (dayLastAchievement > dayStart)
-            {
-                return false;
-            }
-
-            var total = await Context.Entries
-                .Where(e => e.TaskId == task.Id && e.Day >= dayStart)
-                .SumAsync(e => e.Value)
-                .ConfigureAwait(false);
-
-            return
-                task.GoalMinMax == 1 && total == task.Goal ||
-                task.GoalMinMax == 2 && total >= task.Goal ||
-                task.GoalMinMax == 3 && total <= task.Goal
-            ;
         }
     }
 }

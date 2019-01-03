@@ -10,7 +10,7 @@ using WebCommon.Properties;
 using WebCommon.BaseControllers;
 using Common.Models;
 using DataLayer.Interfaces;
-
+using System.Threading.Tasks;
 
 namespace WebCommon.Attributes
 {
@@ -33,24 +33,21 @@ namespace WebCommon.Attributes
             this.authenticationRequired = authenticationRequired;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="context"></param>
-        public override void OnActionExecuting(ActionExecutingContext context)
+        public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             RetrieveParameters(context, out var accessToken);
             SetCulture();
 
-            var isValidated = ValidateRequest(context, accessToken, out var errPhrase, out var errMessage);
+            var result = await ValidateRequest(context, accessToken).ConfigureAwait(false);
 
-            if (isValidated || !authenticationRequired)
+            if (result.isValid || !authenticationRequired)
             {
-                base.OnActionExecuting(context);
+                //await next();
+                await base.OnActionExecutionAsync(context, next);
             }
             else
             {
-                context.Result = new JsonResult(new HttpErrorMessage(errPhrase, errMessage))
+                context.Result = new JsonResult(new HttpErrorMessage(result.errPhrase, result.errMessage))
                 {
                     StatusCode = (int)HttpStatusCode.Unauthorized
                 };
@@ -89,7 +86,6 @@ namespace WebCommon.Attributes
 
         //            if (objType.IsGenericType && objType.GetGenericTypeDefinition() == typeof(List<>))
         //            {
-        //                // FNM: better do this only in SQL part, and remove that last chance check
         //                (context.Result as ObjectResult).Value = (obj as IEnumerable<dynamic>)?.Take(AppSettings.MaxRows);
         //            }
         //        }
@@ -111,15 +107,16 @@ namespace WebCommon.Attributes
         //    base.OnResultExecuting(context);
         //}
 
-        private bool ValidateRequest(ActionExecutingContext context, string accessToken, out string errPhrase, out string errMessage)
+        private async Task<(bool isValid, string errPhrase, string errMessage)> ValidateRequest(ActionExecutingContext context, string accessToken)
         {
-            errPhrase = errMessage = "";
+            var errPhrase = ""; 
+            var errMessage = "";
 
             if (accessToken != null)
             {
                 if (context.Controller is BaseController apiController)
                 {
-                    var userToken = authManager.VerifyAccessToken(accessToken);
+                    var userToken = await authManager.VerifyAccessToken(accessToken).ConfigureAwait(false);
                     if (userToken != null)
                     {
                         apiController.Token = AuthToken.FromUserToken(userToken);
@@ -128,24 +125,24 @@ namespace WebCommon.Attributes
                     {
                         errPhrase = "InvalidToken";
                         errMessage = Resources.errInvalidToken;
-                        return false;
+                        return (false, errPhrase, errMessage);
                     }
                 }
                 else
                 {
                     errPhrase = "InvalidController";
                     errMessage = Resources.errInvalidController;
-                    return false;
+                    return (false, errPhrase, errMessage);
                 }
             }
             else
             {
                 errPhrase = "InvalidToken";
                 errMessage = Resources.errInvalidToken;
-                return false;
+                return (false, errPhrase, errMessage);
             }
 
-            return true;
+            return (false, "", "");
         }
 
         private static void RetrieveParameters(ActionContext context, out string accessToken)

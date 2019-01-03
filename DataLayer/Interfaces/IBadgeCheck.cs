@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Common.Interfaces;
 using Common.Models.Entities;
 
 namespace DataLayer.Interfaces
@@ -6,7 +7,7 @@ namespace DataLayer.Interfaces
     /// <summary>
     /// Badge check.
     /// </summary>
-    public interface IBadgeCheck
+    public interface IBadgeCheck : IDependency
     {
         /// <summary>
         /// Gets the new badges.

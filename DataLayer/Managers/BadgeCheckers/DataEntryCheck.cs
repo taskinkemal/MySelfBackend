@@ -77,7 +77,7 @@ namespace DataLayer.Managers.BadgeCheckers
         {
             var result = new List<UserBadge>();
 
-            var entries = from entry in Context.Entries
+            var entries = await (from entry in Context.Entries
                           join task in Context.Tasks on entry.TaskId equals task.Id
                           where task.UserId == userId && task.Status == 1
                           group entry.TaskId by entry.Day into g
@@ -85,10 +85,9 @@ namespace DataLayer.Managers.BadgeCheckers
                           {
                               g.Key,
                               Entries = g.Count()
-                          };
+                          }).ToListAsync().ConfigureAwait(false);
 
-            var e = await entries.ToListAsync().ConfigureAwait(false);
-            return e.Count >= 5;
+            return entries.Count >= 5;
         }
 
         private async Task<bool> CheckLevel2(int userId)
@@ -110,7 +109,7 @@ namespace DataLayer.Managers.BadgeCheckers
             var result = new List<UserBadge>();
 
             var today = DateTime.Now.GetDay();
-            var entries = from entry in Context.Entries
+            var entries = await (from entry in Context.Entries
                           join task in Context.Tasks on entry.TaskId equals task.Id
                           where entry.Day >= (today - days) && entry.Day <= today && task.UserId == userId && task.Status == 1
                           group entry.TaskId by entry.Day into g
@@ -118,10 +117,9 @@ namespace DataLayer.Managers.BadgeCheckers
                           {
                               g.Key,
                               Entries = g.Count()
-                          };
+                          }).ToListAsync().ConfigureAwait(false);
 
-            var e = await entries.ToListAsync().ConfigureAwait(false);
-            return e.Count;
+            return entries.Count;
         }
     }
 }

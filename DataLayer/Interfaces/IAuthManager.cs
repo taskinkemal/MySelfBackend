@@ -15,7 +15,7 @@ namespace DataLayer.Interfaces
         /// </summary>
         /// <param name="accessToken"></param>
         /// <returns></returns>
-        UserToken VerifyAccessToken(string accessToken);
+        System.Threading.Tasks.Task<UserToken> VerifyAccessToken(string accessToken);
 
         /// <summary>
         /// 

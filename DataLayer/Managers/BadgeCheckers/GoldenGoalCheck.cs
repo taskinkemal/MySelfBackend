@@ -6,6 +6,7 @@ using Common.Extensions;
 using Common.Models.Entities;
 using DataLayer.Context;
 using DataLayer.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace DataLayer.Managers.BadgeCheckers
 {
@@ -36,16 +37,14 @@ namespace DataLayer.Managers.BadgeCheckers
             var result = new List<UserBadge>();
             var score = 0;
 
-            var allAchievements = (from achievement in Context.AchievedGoals
-                                   join task in Context.Tasks on achievement.TaskId equals task.Id
-                                   where task.GoalTimeFrame == 3 && task.UserId == userId && task.Status == 1
-                                   select achievement).ToAsyncEnumerable();
-
-            var allAchievementsList = await allAchievements.ToList().ConfigureAwait(false);
+            var allAchievedGoals = await (from goal in Context.Goals
+                            join task in Context.Tasks on goal.TaskId equals task.Id
+                            where task.UserId == userId && task.Status == 1 && goal.AchievementStatus == 1
+                            select goal).ToListAsync().ConfigureAwait(false);
 
             if (currentLevel == 0)
             {
-                if (allAchievementsList.Count > 0)
+                if (allAchievedGoals.Count > 0)
                 {
                     AddBadge(result, userId, 1);
                     score += 20;
@@ -54,9 +53,7 @@ namespace DataLayer.Managers.BadgeCheckers
 
             if (currentLevel < 2)
             {
-                var count = GetConsecutiveMonthAchievementsCount(allAchievementsList);
-
-                if (count >= 1)
+                if (allAchievedGoals.Count > 5)
                 {
                     AddBadge(result, userId, 2);
                     score += 50;
@@ -65,9 +62,7 @@ namespace DataLayer.Managers.BadgeCheckers
 
             if (currentLevel < 3)
             {
-                var count = GetConsecutiveMonthAchievementsCount(allAchievementsList);
-
-                if (count >= 3)
+                if (allAchievedGoals.Count > 25)
                 {
                     AddBadge(result, userId, 3);
                     score += 100;
@@ -75,39 +70,6 @@ namespace DataLayer.Managers.BadgeCheckers
             }
 
             return (badges: result, score: score);
-        }
-
-        private int GetConsecutiveMonthAchievementsCount(List<AchievedGoal> allAchievements)
-        {
-            var orderedList = allAchievements.OrderBy(a => a.TaskId).ThenBy(a => a.Day);
-
-            var count = 0;
-            var months = 0;
-
-            for (var i = 0; i < allAchievements.Count; i++)
-            {
-                if (i == 0 || allAchievements[i - 1].TaskId != allAchievements[i].TaskId)
-                {
-                    months = 0;
-                }
-                else
-                {
-                    if (allAchievements[i].Day.GetDate() == allAchievements[i - 1].Day.GetDate().AddMonths(1))
-                    {
-                        months++;
-                    }
-                }
-
-                if (i == allAchievements.Count - 1 || allAchievements[i + 1].TaskId != allAchievements[i].TaskId)
-                {
-                    if (months >= 3)
-                    {
-                        count++;
-                    }
-                }
-            }
-
-            return count;
         }
     }
 }

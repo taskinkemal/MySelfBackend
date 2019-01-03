@@ -6,6 +6,7 @@ using System.Net;
 using Common;
 using Common.Interfaces;
 using WebCommon.Properties;
+using System.Threading.Tasks;
 
 namespace WebCommon.Attributes
 {
@@ -28,11 +29,7 @@ namespace WebCommon.Attributes
             this.logManager = logManager;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="context"></param>
-        public override void OnException(ExceptionContext context)
+        public override Task OnExceptionAsync(ExceptionContext context)
         {
             logManager.AddLog(context.Exception);
 
@@ -55,7 +52,7 @@ namespace WebCommon.Attributes
             context.HttpContext.Response.StatusCode = (int)status;
             context.Result = new JsonResult(new HttpErrorMessage(code, message));
 
-            base.OnException(context);
+            return base.OnExceptionAsync(context);
         }
     }
 }

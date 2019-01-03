@@ -38,18 +38,13 @@ namespace DataLayer.Managers
         /// </summary>
         /// <param name="accessToken"></param>
         /// <returns></returns>
-        public UserToken VerifyAccessToken(string accessToken)
+        public async System.Threading.Tasks.Task<UserToken> VerifyAccessToken(string accessToken)
         {
-            if (accessToken == "kemal")
-                return new UserToken
-                {
-                    UserId = 1,
-                    ValidUntil = DateTime.Now.AddYears(1)
-                };
-
-            return Context.UserTokens.FirstOrDefault(t =>
+            var result = await Context.UserTokens.FirstOrDefaultAsync(t =>
                 t.Token.Equals(accessToken, StringComparison.OrdinalIgnoreCase) &&
-                t.ValidUntil > DateTime.Now);
+                t.ValidUntil > DateTime.Now).ConfigureAwait(false);
+
+            return result;
         }
 
         /// <summary>
@@ -101,9 +96,16 @@ namespace DataLayer.Managers
         /// <returns></returns>
         public async System.Threading.Tasks.Task<int> VerifyFacebookUserAsync(User user, string accessToken)
         {
-            if (await VerifyFacebookAccessToken(user.Email, accessToken))
+            if (user == null)
             {
-                return await GetUserIdFromEmail(user);
+                return -1;
+            }
+
+            var isVerified = await VerifyFacebookAccessToken(user.Email, accessToken).ConfigureAwait(false);
+            if (isVerified)
+            {
+                var userId = await GetUserIdFromEmail(user).ConfigureAwait(false);
+                return userId;
             }
 
             return -1;
@@ -118,9 +120,16 @@ namespace DataLayer.Managers
         /// <returns></returns>
         public async System.Threading.Tasks.Task<int> VerifyGoogleUserAsync(User user, string accessToken)
         {
-            if (await VerifyGoogleAccessToken(user.Email, accessToken))
+            if (user == null)
             {
-                return await GetUserIdFromEmail(user);
+                return -1;
+            }
+
+            var isVerified = await VerifyGoogleAccessToken(user.Email, accessToken).ConfigureAwait(false);
+            if (isVerified)
+            {
+                var userId = await GetUserIdFromEmail(user).ConfigureAwait(false);
+                return userId;
             }
 
             return -1;
@@ -128,6 +137,11 @@ namespace DataLayer.Managers
 
         private async System.Threading.Tasks.Task<int> GetUserIdFromEmail(User user)
         {
+            if (user == null)
+            {
+                return -1;
+            }
+
             var list = await Context.Users.Where(u => u.Email.Equals(user.Email, StringComparison.OrdinalIgnoreCase)).ToListAsync().ConfigureAwait(false);
             
             if (list.Count > 0)
@@ -135,7 +149,7 @@ namespace DataLayer.Managers
                 return list[0].Id;
             }
 
-            var userId = await InsertUserAsync(user);
+            var userId = await InsertUserAsync(user).ConfigureAwait(false);
 
             return userId;
         }
