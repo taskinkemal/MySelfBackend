@@ -43,7 +43,7 @@ namespace WebApplication.Controllers
         [HttpGet("/api/Users/Badges")]
         public async Task<GenericCollection<UserBadge>> GetBadges()
         {
-            var list = await userManager.GetUserBadges(Token.UserID).ConfigureAwait(false);
+            var list = await userManager.GetUserBadges(Token.UserID);
 
             return list.ToCollection();
         }

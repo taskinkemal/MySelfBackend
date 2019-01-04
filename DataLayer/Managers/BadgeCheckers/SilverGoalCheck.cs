@@ -39,7 +39,7 @@ namespace DataLayer.Managers.BadgeCheckers
             var allGoals = await (from goal in Context.Goals
                                   join task in Context.Tasks on goal.TaskId equals task.Id
                                   where task.UserId == userId && task.Status == 1
-                                  select goal).ToListAsync().ConfigureAwait(false);
+                                  select goal).ToListAsync();
 
             if (currentLevel == 0)
             {
@@ -52,7 +52,7 @@ namespace DataLayer.Managers.BadgeCheckers
 
             if (currentLevel < 2)
             {
-                if (allGoals.Count > 5)
+                if (allGoals.Count >= 5)
                 {
                     AddBadge(result, userId, 2);
                     score += 30;
@@ -61,7 +61,7 @@ namespace DataLayer.Managers.BadgeCheckers
 
             if (currentLevel < 3)
             {
-                if (allGoals.Count > 25)
+                if (allGoals.Count >= 25)
                 {
                     AddBadge(result, userId, 3);
                     score += 60;

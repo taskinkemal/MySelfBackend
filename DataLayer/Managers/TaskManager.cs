@@ -25,9 +25,11 @@ namespace DataLayer.Managers
         /// </summary>
         /// <param name="userId"></param>
         /// <returns></returns>
-        public System.Threading.Tasks.Task<List<Task>> GetTasks(int userId)
+        public async System.Threading.Tasks.Task<List<Task>> GetTasks(int userId)
         {
-            return Context.Tasks.Where(t => t.UserId == userId).ToListAsync();
+            var list = await Context.Tasks.Where(t => t.UserId == userId).ToListAsync();
+
+            return list;
         }
 
         /// <summary>
@@ -38,7 +40,7 @@ namespace DataLayer.Managers
         /// <returns></returns>
         public async System.Threading.Tasks.Task<int> AddOrUpdateTask(int userId, Task task)
         {
-            var existingTask = await Context.Tasks.FindAsync(task.Id).ConfigureAwait(false);
+            var existingTask = await Context.Tasks.FindAsync(task.Id);
 
             if (existingTask != null)
             {
@@ -59,7 +61,9 @@ namespace DataLayer.Managers
                 existingTask.AutomationVar = task.AutomationVar;
                 existingTask.ModificationDate = DateTime.Now;
 
-                await Context.SaveChangesAsync().ConfigureAwait(false);
+                Context.Tasks.Update(existingTask);
+
+                await Context.SaveChangesAsync();
 
                 return existingTask.Id;
             }
@@ -67,9 +71,9 @@ namespace DataLayer.Managers
             {
                 task.UserId = userId;
                 task.Status = 1;
-                var result = await Context.Tasks.AddAsync(task).ConfigureAwait(false);
+                var result = Context.Tasks.Add(task);
 
-                await Context.SaveChangesAsync().ConfigureAwait(false);
+                await Context.SaveChangesAsync();
 
                 return result.Entity.Id;
             }
@@ -83,12 +87,12 @@ namespace DataLayer.Managers
         /// <returns></returns>
         public async System.Threading.Tasks.Task<bool> DeleteTask(int userId, int id)
         {
-            var task = await Context.Tasks.FindAsync(id).ConfigureAwait(false);
+            var task = await Context.Tasks.FindAsync(id);
 
             if (task != null && task.UserId == userId)
             {
                 task.Status = 0;
-                await Context.SaveChangesAsync().ConfigureAwait(false);
+                await Context.SaveChangesAsync();
                 return true;
             }
 

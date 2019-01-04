@@ -42,7 +42,7 @@ namespace DataLayer.Managers
         {
             var result = await Context.UserTokens.FirstOrDefaultAsync(t =>
                 t.Token.Equals(accessToken, StringComparison.OrdinalIgnoreCase) &&
-                t.ValidUntil > DateTime.Now).ConfigureAwait(false);
+                t.ValidUntil > DateTime.Now);
 
             return result;
         }
@@ -57,14 +57,14 @@ namespace DataLayer.Managers
         {
             AuthToken result;
 
-            var existingToken = await Context.UserTokens.FindAsync(userId, deviceId).ConfigureAwait(false);
+            var existingToken = await Context.UserTokens.FindAsync(userId, deviceId);
 
             if (existingToken != null)
             {
                 existingToken.ValidUntil = DateTime.Now.AddYears(1);
                 existingToken.Token = GenerateToken(userId);
 
-                await Context.SaveChangesAsync().ConfigureAwait(false);
+                await Context.SaveChangesAsync();
 
                 result = AuthToken.FromUserToken(existingToken);
             }
@@ -78,9 +78,9 @@ namespace DataLayer.Managers
                     ValidUntil = DateTime.Now.AddYears(1)
                 };
 
-                await Context.UserTokens.AddAsync(newToken).ConfigureAwait(false);
+                Context.UserTokens.Add(newToken);
 
-                await Context.SaveChangesAsync().ConfigureAwait(false);
+                await Context.SaveChangesAsync();
 
                 result = AuthToken.FromUserToken(newToken);
             }
@@ -101,10 +101,10 @@ namespace DataLayer.Managers
                 return -1;
             }
 
-            var isVerified = await VerifyFacebookAccessToken(user.Email, accessToken).ConfigureAwait(false);
+            var isVerified = await VerifyFacebookAccessToken(user.Email, accessToken);
             if (isVerified)
             {
-                var userId = await GetUserIdFromEmail(user).ConfigureAwait(false);
+                var userId = await GetUserIdFromEmail(user);
                 return userId;
             }
 
@@ -125,10 +125,10 @@ namespace DataLayer.Managers
                 return -1;
             }
 
-            var isVerified = await VerifyGoogleAccessToken(user.Email, accessToken).ConfigureAwait(false);
+            var isVerified = await VerifyGoogleAccessToken(user.Email, accessToken);
             if (isVerified)
             {
-                var userId = await GetUserIdFromEmail(user).ConfigureAwait(false);
+                var userId = await GetUserIdFromEmail(user);
                 return userId;
             }
 
@@ -142,21 +142,21 @@ namespace DataLayer.Managers
                 return -1;
             }
 
-            var list = await Context.Users.Where(u => u.Email.Equals(user.Email, StringComparison.OrdinalIgnoreCase)).ToListAsync().ConfigureAwait(false);
+            var list = await Context.Users.Where(u => u.Email.Equals(user.Email, StringComparison.OrdinalIgnoreCase)).ToListAsync();
             
             if (list.Count > 0)
             {
                 return list[0].Id;
             }
 
-            var userId = await InsertUserAsync(user).ConfigureAwait(false);
+            var userId = await InsertUserAsync(user);
 
             return userId;
         }
 
         private async System.Threading.Tasks.Task<int> InsertUserAsync(User user)
         {
-            var u = await Context.Users.AddAsync(new User
+            var u = Context.Users.Add(new User
             {
                 FirstName = user.FirstName,
                 LastName = user.LastName,
@@ -164,7 +164,7 @@ namespace DataLayer.Managers
                 PictureUrl = user.PictureUrl
             });
 
-            await Context.SaveChangesAsync().ConfigureAwait(false);
+            await Context.SaveChangesAsync();
 
             return u.Entity.Id;
         }

@@ -19,13 +19,13 @@ namespace DataLayer.Managers
         /// </summary>
         /// <returns>The user badges.</returns>
         /// <param name="userId">User identifier.</param>
-        public System.Threading.Tasks.Task<List<UserBadge>> GetUserBadges(int userId)
+        public async System.Threading.Tasks.Task<List<UserBadge>> GetUserBadges(int userId)
         {
-            var result = from userBadge in Context.UserBadges
+            var result = await (from userBadge in Context.UserBadges
                          where userBadge.UserId == userId
-                         select userBadge;
+                         select userBadge).ToListAsync();
 
-            return result.ToListAsync();
+            return result;
         }
 
         /// <summary>
@@ -35,13 +35,13 @@ namespace DataLayer.Managers
         /// <param name="userId">User identifier.</param>
         public async System.Threading.Tasks.Task<User> GetUser(int userId)
         {
-            var result = (from user in Context.Users
+            var result = await (from user in Context.Users
                          where user.Id == userId
-                         select user).FirstOrDefault();
+                         select user).FirstOrDefaultAsync();
 
             if (result != null)
             {
-                result.Badges = await GetUserBadges(userId).ConfigureAwait(false);
+                result.Badges = await GetUserBadges(userId);
             }
 
             return result;

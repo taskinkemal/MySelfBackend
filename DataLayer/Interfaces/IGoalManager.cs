@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Common.Interfaces;
+using Common.Models;
 using Common.Models.Entities;
 
 namespace DataLayer.Interfaces
@@ -20,7 +21,7 @@ namespace DataLayer.Interfaces
         /// <param name="userId"></param>
         /// <param name="goal"></param>
         /// <returns></returns>
-        System.Threading.Tasks.Task<int> AddOrUpdateGoal(int userId, Goal goal);
+        System.Threading.Tasks.Task<UploadGoalResponse> AddOrUpdateGoal(int userId, Goal goal);
 
         /// <summary>
         /// 
@@ -37,5 +38,7 @@ namespace DataLayer.Interfaces
         /// <param name="userId">User identifier.</param>
         /// <param name="taskId">Task identifier.</param>
         System.Threading.Tasks.Task<List<int>> CheckGoalAchievements(int userId, int taskId);
+
+        System.Threading.Tasks.Task<(int Score, List<UserBadge> NewBadges)> CheckNewBadges(int userId);
     }
 }

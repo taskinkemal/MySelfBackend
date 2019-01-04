@@ -29,7 +29,7 @@ namespace WebApplication.Controllers
         [HttpGet]
         public async Task<GenericCollection<Common.Models.Entities.Task>> Get()
         {
-            var list = await taskManager.GetTasks(Token.UserID).ConfigureAwait(false);
+            var list = await taskManager.GetTasks(Token.UserID);
 
             return list.ToCollection();
         }

@@ -39,7 +39,7 @@ namespace DataLayer.Managers.BadgeCheckers
 
             if (currentLevel == 0)
             {
-                var success = await CheckLevel1(userId).ConfigureAwait(false);
+                var success = await CheckLevel1(userId);
 
                 if (success)
                 {
@@ -50,7 +50,7 @@ namespace DataLayer.Managers.BadgeCheckers
 
             if (currentLevel < 2)
             {
-                var success = await CheckLevel2(userId).ConfigureAwait(false);
+                var success = await CheckLevel2(userId);
 
                 if (success)
                 {
@@ -61,7 +61,7 @@ namespace DataLayer.Managers.BadgeCheckers
 
             if (currentLevel < 3)
             {
-                var success = await CheckLevel3(userId).ConfigureAwait(false);
+                var success = await CheckLevel3(userId);
 
                 if (success)
                 {
@@ -85,7 +85,7 @@ namespace DataLayer.Managers.BadgeCheckers
                           {
                               g.Key,
                               Entries = g.Count()
-                          }).ToListAsync().ConfigureAwait(false);
+                          }).ToListAsync();
 
             return entries.Count >= 5;
         }
@@ -117,7 +117,7 @@ namespace DataLayer.Managers.BadgeCheckers
                           {
                               g.Key,
                               Entries = g.Count()
-                          }).ToListAsync().ConfigureAwait(false);
+                          }).ToListAsync();
 
             return entries.Count;
         }

@@ -29,7 +29,7 @@ namespace WebApplication.Controllers
         [HttpGet]
         public async Task<GenericCollection<Common.Models.Entities.Goal>> Get()
         {
-            var list = await goalManager.GetGoals(Token.UserID).ConfigureAwait(false);
+            var list = await goalManager.GetGoals(Token.UserID);
 
             return list.ToCollection();
         }
@@ -44,7 +44,7 @@ namespace WebApplication.Controllers
         {
             var result = await goalManager.AddOrUpdateGoal(Token.UserID, data);
 
-            var response = result > -1 ?
+            var response = result != null ?
                 CreateResponse(result) :
                 CreateErrorResponse(HttpStatusCode.InternalServerError, "UpdateFailed", "Goal cannot be updated.");
 

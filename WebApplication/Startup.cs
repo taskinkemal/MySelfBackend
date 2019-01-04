@@ -62,9 +62,11 @@ namespace WebApplication
 
             //services.AddDbContext<MyselfContext>(options => options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
             if (Configuration.GetSection("AppSettings").GetValue<bool>("IsSqLite")) 
-                services.AddDbContext<MyselfContext>(options => options.UseSqlite($"Data Source={AppContext.BaseDirectory}/myself.db"));
+                services.AddDbContext<MyselfContext>(
+                    options => options.UseSqlite($"Data Source={AppContext.BaseDirectory}/myself.db"), ServiceLifetime.Scoped);
             else
-                services.AddDbContext<MyselfContext>(options => options.UseSqlServer(Configuration.GetSection("AppSettings").GetValue<string>("ConnectionString")));
+                services.AddDbContext<MyselfContext>(
+                    options => options.UseSqlServer(Configuration.GetSection("AppSettings").GetValue<string>("ConnectionString")), ServiceLifetime.Scoped);
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 

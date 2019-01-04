@@ -35,10 +35,10 @@ namespace WebApplication.Controllers
         {
             if (!string.IsNullOrWhiteSpace(data?.AccessToken))
             {
-                var userToken = await authManager.VerifyAccessToken(data.AccessToken).ConfigureAwait(false);
+                var userToken = await authManager.VerifyAccessToken(data.AccessToken);
                 if (userToken != null)
                 {
-                    var result = await authManager.GenerateTokenAsync(userToken.UserId, data.DeviceID).ConfigureAwait(false);
+                    var result = await authManager.GenerateTokenAsync(userToken.UserId, data.DeviceID);
                     return CreateResponse(result);
                 }
             }
@@ -60,14 +60,14 @@ namespace WebApplication.Controllers
 
             if (!string.IsNullOrWhiteSpace(data?.FacebookToken) && !string.IsNullOrWhiteSpace(data.Email))
             {
-                userID = await authManager.VerifyFacebookUserAsync(data.ToUser(), data.FacebookToken).ConfigureAwait(false);
+                userID = await authManager.VerifyFacebookUserAsync(data.ToUser(), data.FacebookToken);
 
                 isValidated = userID >= 0;
             }
 
             if (isValidated)
             {
-                var result = await authManager.GenerateTokenAsync(userID, data.DeviceID).ConfigureAwait(false);
+                var result = await authManager.GenerateTokenAsync(userID, data.DeviceID);
                 response = CreateResponse(result);
             }
             else
@@ -92,14 +92,14 @@ namespace WebApplication.Controllers
 
             if (!string.IsNullOrWhiteSpace(data?.GoogleToken) && !string.IsNullOrWhiteSpace(data.Email))
             {
-                userID = await authManager.VerifyGoogleUserAsync(data.ToUser(), data.GoogleToken).ConfigureAwait(false);
+                userID = await authManager.VerifyGoogleUserAsync(data.ToUser(), data.GoogleToken);
 
                 isValidated = userID >= 0;
             }
 
             if (isValidated)
             {
-                var result = await authManager.GenerateTokenAsync(userID, data.DeviceID).ConfigureAwait(false);
+                var result = await authManager.GenerateTokenAsync(userID, data.DeviceID);
                 response = CreateResponse(result);
             }
             else

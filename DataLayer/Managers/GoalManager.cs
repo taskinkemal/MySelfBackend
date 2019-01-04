@@ -7,37 +7,44 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Common.Extensions;
 using System.Threading.Tasks;
+using Common.Models;
 
 namespace DataLayer.Managers
 {
     public class GoalManager : ManagerBase, IGoalManager
     {
+        private readonly IEnumerable<IBadgeCheck> badgeCheckers;
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="context"></param>
-        public GoalManager(MyselfContext context) : base(context) { }
-
-        public async Task<int> AddOrUpdateGoal(int userId, Goal goal)
+        /// <param name="badgeCheckers"></param>
+        public GoalManager(MyselfContext context, IEnumerable<IBadgeCheck> badgeCheckers) : base(context)
         {
-            var existingGoal = await Context.Goals.FindAsync(goal.Id).ConfigureAwait(false);
+            this.badgeCheckers = badgeCheckers;
+        }
+
+        public async Task<UploadGoalResponse> AddOrUpdateGoal(int userId, Goal goal)
+        {
+            var existingGoal = await Context.Goals.FindAsync(goal.Id);
 
             if (existingGoal != null)
             {
-                var existingTask = await Context.Tasks.FindAsync(existingGoal.TaskId).ConfigureAwait(false);
+                var existingTask = await Context.Tasks.FindAsync(existingGoal.TaskId);
                 if (existingTask.UserId != userId)
                 {
-                    return -1;
+                    return null;
                 }
 
                 if (existingGoal.AchievementStatus != 0 || existingGoal.EndDay <= DateTime.Now.GetDay())
                 {
-                    return -1;
+                    return null;
                 }
 
                 //if (existingGoal.ModificationDate > goal.ModificationDate)
                 //{
-                //    return -1;
+                //    return null;
                 //}
 
                 existingGoal.StartDay = goal.StartDay;
@@ -46,34 +53,36 @@ namespace DataLayer.Managers
                 existingGoal.MinMax = goal.MinMax;
                 existingGoal.ModificationDate = DateTime.Now;
 
-                await Context.SaveChangesAsync().ConfigureAwait(false);
+                Context.Goals.Update(existingGoal);
 
-                return existingGoal.Id;
+                await Context.SaveChangesAsync();
+
+                return await GetUploadResponse(userId, existingGoal.Id);
             }
             else
             {
                 if (goal.EndDay <= DateTime.Now.GetDay())
                 {
-                    return -1;
+                    return null;
                 }
 
                 goal.AchievementStatus = 0;
-                var result = await Context.Goals.AddAsync(goal).ConfigureAwait(false);
+                var result = Context.Goals.Add(goal);
 
-                await Context.SaveChangesAsync().ConfigureAwait(false);
+                await Context.SaveChangesAsync();
 
-                return result.Entity.Id;
+                return await GetUploadResponse(userId, result.Entity.Id);
             }
         }
 
         public async Task<bool> DeleteGoal(int userId, int id)
         {
-            var goal = await GetGoal(userId, id).ConfigureAwait(false);
+            var goal = await GetGoal(userId, id);
 
             if (goal != null)
             {
                 Context.Goals.Remove(goal);
-                await Context.SaveChangesAsync().ConfigureAwait(false);
+                await Context.SaveChangesAsync();
                 return true;
             }
 
@@ -82,20 +91,18 @@ namespace DataLayer.Managers
 
         public async Task<List<Goal>> GetGoals(int userId)
         {
-            var result = from goal in Context.Goals
+            var list = await (from goal in Context.Goals
                          join task in Context.Tasks on goal.TaskId equals task.Id
                          where task.UserId == userId && task.Status == 1
-                         select goal;
+                         select goal).ToListAsync();
 
-            var list = await result.ToListAsync();
-
-            var values = from goal in Context.Goals
+            var values = await (from goal in Context.Goals
                          join task in Context.Tasks on goal.TaskId equals task.Id
                          join entry in Context.Entries on goal.TaskId equals entry.TaskId
                          where task.UserId == userId && task.Status == 1
                             && entry.Day >= goal.StartDay && entry.Day <= goal.EndDay
                          group entry by new { goal.Id } into g
-                         select new { GoalId = g.Key.Id, Total = g.Sum(e => e.Value) };
+                         select new { GoalId = g.Key.Id, Total = g.Sum(e => e.Value) }).ToListAsync();
 
             var dictValues = values.ToDictionary(arg => arg.GoalId, arg => arg.Total);
 
@@ -118,27 +125,23 @@ namespace DataLayer.Managers
         /// <param name="taskId">Task identifier.</param>
         public async Task<List<int>> CheckGoalAchievements(int userId, int taskId)
         {
-            var result = from goal in Context.Goals
+            var list = await (from goal in Context.Goals
                          join task in Context.Tasks on goal.TaskId equals task.Id
                          where task.UserId == userId && goal.TaskId == taskId && task.Status == 1
                          && goal.AchievementStatus == 0
-                         select goal;
-
-            var list = await result.ToListAsync();
+                         select goal).ToListAsync();
 
             if (list.Count == 0)
             {
                 return new List<int>();
             }
 
-            var minDate = result.Select(x => x.StartDay).Min();
-            var maxDate = result.Select(x => x.StartDay).Max();
+            var minDate = list.Select(x => x.StartDay).Min();
+            var maxDate = list.Select(x => x.EndDay).Max();
 
-            var entriesQueryable = from entry in Context.Entries
+            var entries = await (from entry in Context.Entries
                          where entry.TaskId == taskId && entry.Day >= minDate && entry.Day <= maxDate
-                         select entry;
-
-            var entries = await entriesQueryable.ToListAsync();
+                         select entry).ToListAsync();
 
             var achievedGoals = new List<int>();
 
@@ -158,7 +161,7 @@ namespace DataLayer.Managers
 
                     if (goal.MinMax == 1 && goal.Target == sum ||
                         goal.MinMax == 2 && goal.Target <= sum ||
-                        goal.MinMax == 3 && goal.Target >= sum)
+                        goal.MinMax == 3 && goal.Target >= sum && goal.EndDay < DateTime.Now.GetDay())
                     {
                         achievedGoals.Add(goal.Id);
 
@@ -177,14 +180,80 @@ namespace DataLayer.Managers
             return achievedGoals;
         }
 
+        public async Task<(int Score, List<UserBadge> NewBadges)> CheckNewBadges(int userId)
+        {
+            var newBadges = new List<UserBadge>();
+
+            var user = await Context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var existingBadges = await Context.UserBadges.Where(u => u.UserId == userId).ToListAsync();
+
+            foreach (var checker in badgeCheckers)
+            {
+                var list = await checker.GetNewBadges(userId, existingBadges);
+
+                foreach (var badge in list.badges)
+                {
+                    await AddOrUpdateBadgeAsync(userId, badge.BadgeId, badge.Level);
+                }
+
+                user.Score += list.score;
+
+                newBadges.AddRange(list.badges);
+            }
+
+            Context.Users.Update(user);
+            await Context.SaveChangesAsync(); // for the user score.
+
+            return (Score: user.Score, NewBadges: newBadges);
+        }
+
+        private async Task<UploadGoalResponse> GetUploadResponse(int userId, int goalId)
+        {
+            var checkBadgesResult = await CheckNewBadges(userId);
+
+            return new UploadGoalResponse
+            {
+                GoalId = goalId,
+                Score = checkBadgesResult.Score,
+                NewBadges = checkBadgesResult.NewBadges
+            };
+        }
+
+        private async Task<bool> AddOrUpdateBadgeAsync(int userId, int badgeId, int level)
+        {
+            var existingBadge = await Context.UserBadges.FindAsync(userId, badgeId);
+
+            if (existingBadge == null)
+            {
+                Context.UserBadges.Add(new UserBadge
+                {
+                    UserId = userId,
+                    BadgeId = badgeId,
+                    Level = level,
+                    ModificationDate = DateTime.Now
+                });
+
+                return true;
+            }
+            else if (existingBadge.Level < level)
+            {
+                existingBadge.Level = level;
+                existingBadge.ModificationDate = DateTime.Now;
+
+                Context.UserBadges.Update(existingBadge);
+
+                return true;
+            }
+
+            return false;
+        }
+
         private async Task<Goal> GetGoal(int userId, int id)
         {
-            var result = from goal in Context.Goals
+            var list = await (from goal in Context.Goals
                          join task in Context.Tasks on goal.TaskId equals task.Id
                          where task.UserId == userId && goal.Id == id
-                         select goal;
-
-            var list = await result.ToListAsync();
+                         select goal).ToListAsync();
 
             return list.Count == 1 ? list[0] : null;
         }

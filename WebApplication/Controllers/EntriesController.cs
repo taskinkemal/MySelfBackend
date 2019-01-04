@@ -32,7 +32,7 @@ namespace WebApplication.Controllers
         [HttpGet]
         public async Task<GenericCollection<Entry>> Get(int start, int end)
         {
-            var list = await entryManager.GetEntries(Token.UserID, start, end).ConfigureAwait(false);
+            var list = await entryManager.GetEntries(Token.UserID, start, end);
 
             return list.ToCollection();
         }
@@ -45,7 +45,7 @@ namespace WebApplication.Controllers
         [HttpPost]
         public async Task<JsonResult> Post([FromBody]Entry data)
         {
-            var result = await entryManager.AddOrUpdateEntry(Token.UserID, data).ConfigureAwait(false);
+            var result = await entryManager.AddOrUpdateEntry(Token.UserID, data);
 
             if (result != null)
             {

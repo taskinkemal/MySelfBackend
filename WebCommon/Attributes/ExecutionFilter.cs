@@ -33,17 +33,16 @@ namespace WebCommon.Attributes
             this.authenticationRequired = authenticationRequired;
         }
 
-        public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+        public override void OnActionExecuting(ActionExecutingContext context)
         {
             RetrieveParameters(context, out var accessToken);
             SetCulture();
 
-            var result = await ValidateRequest(context, accessToken).ConfigureAwait(false);
+            var result = ValidateRequest(context, accessToken).Result;
 
             if (result.isValid || !authenticationRequired)
             {
-                //await next();
-                await base.OnActionExecutionAsync(context, next);
+                base.OnActionExecuting(context);
             }
             else
             {
@@ -53,6 +52,27 @@ namespace WebCommon.Attributes
                 };
             }
         }
+
+        //public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+        //{
+        //    RetrieveParameters(context, out var accessToken);
+        //    SetCulture();
+
+        //    var result = await ValidateRequest(context, accessToken);
+
+        //    if (result.isValid || !authenticationRequired)
+        //    {
+        //        //await next();
+        //        await base.OnActionExecutionAsync(context, next);
+        //    }
+        //    else
+        //    {
+        //        context.Result = new JsonResult(new HttpErrorMessage(result.errPhrase, result.errMessage))
+        //        {
+        //            StatusCode = (int)HttpStatusCode.Unauthorized
+        //        };
+        //    }
+        //}
 
         ///// <summary>
         ///// 
@@ -116,7 +136,7 @@ namespace WebCommon.Attributes
             {
                 if (context.Controller is BaseController apiController)
                 {
-                    var userToken = await authManager.VerifyAccessToken(accessToken).ConfigureAwait(false);
+                    var userToken = await authManager.VerifyAccessToken(accessToken);
                     if (userToken != null)
                     {
                         apiController.Token = AuthToken.FromUserToken(userToken);
@@ -142,7 +162,7 @@ namespace WebCommon.Attributes
                 return (false, errPhrase, errMessage);
             }
 
-            return (false, "", "");
+            return (true, "", "");
         }
 
         private static void RetrieveParameters(ActionContext context, out string accessToken)
