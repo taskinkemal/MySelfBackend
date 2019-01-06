@@ -57,7 +57,11 @@ namespace DataLayer.Managers
 
                 await Context.SaveChangesAsync();
 
-                return await GetUploadResponse(userId, existingGoal.Id);
+                var response = await GetUploadResponse(userId, existingGoal.Id);
+
+                await UpdateUserScore(userId, response.Score);
+
+                return response;
             }
             else
             {
@@ -71,7 +75,11 @@ namespace DataLayer.Managers
 
                 await Context.SaveChangesAsync();
 
-                return await GetUploadResponse(userId, result.Entity.Id);
+                var response = await GetUploadResponse(userId, result.Entity.Id);
+
+                await UpdateUserScore(userId, response.Score);
+
+                return response;
             }
         }
 
@@ -182,9 +190,9 @@ namespace DataLayer.Managers
 
         public async Task<(int Score, List<UserBadge> NewBadges)> CheckNewBadges(int userId)
         {
+            var score = 0;
             var newBadges = new List<UserBadge>();
 
-            var user = await Context.Users.FirstOrDefaultAsync(u => u.Id == userId);
             var existingBadges = await Context.UserBadges.Where(u => u.UserId == userId).ToListAsync();
 
             foreach (var checker in badgeCheckers)
@@ -196,15 +204,12 @@ namespace DataLayer.Managers
                     await AddOrUpdateBadgeAsync(userId, badge.BadgeId, badge.Level);
                 }
 
-                user.Score += list.score;
+                score += list.score;
 
                 newBadges.AddRange(list.badges);
             }
 
-            Context.Users.Update(user);
-            await Context.SaveChangesAsync(); // for the user score.
-
-            return (Score: user.Score, NewBadges: newBadges);
+            return (Score: score, NewBadges: newBadges);
         }
 
         private async Task<UploadGoalResponse> GetUploadResponse(int userId, int goalId)
@@ -217,6 +222,22 @@ namespace DataLayer.Managers
                 Score = checkBadgesResult.Score,
                 NewBadges = checkBadgesResult.NewBadges
             };
+        }
+
+        private async Task<bool> UpdateUserScore(int userId, int score)
+        {
+            var user = await Context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user != null)
+            {
+                user.Score += score;
+                Context.Users.Update(user);
+                await Context.SaveChangesAsync();
+
+                return true;
+            }
+
+            return false;
         }
 
         private async Task<bool> AddOrUpdateBadgeAsync(int userId, int badgeId, int level)
