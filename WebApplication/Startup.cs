@@ -15,6 +15,9 @@ using DataLayer.Managers;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 using DataLayer.Managers.BadgeCheckers;
+using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace WebApplication
 {
@@ -44,7 +47,7 @@ namespace WebApplication
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 
             services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
 
@@ -56,9 +59,12 @@ namespace WebApplication
                     .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
             }));
 
-            services
-                .AddMvc()
-                .AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+            services.AddMvc()
+                .AddJsonOptions(options =>
+                {
+                }).AddMvcOptions(options => {
+                    options.EnableEndpointRouting = false;
+                });
 
             //services.AddDbContext<MyselfContext>(options => options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
             if (Configuration.GetSection("AppSettings").GetValue<bool>("IsSqLite")) 
@@ -70,9 +76,25 @@ namespace WebApplication
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-            services.AddMvc().AddJsonOptions(options =>
+            services.Configure<IISServerOptions>(options =>
             {
-                options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
+                // The Newtonsoft.json is not working without allowing synchronous IO.
+                // And at the moment we cannot switch to System.Text.Json because the GraphQl libraries are still using Newtonsoft.
+                // https://github.com/dotnet/aspnetcore/issues/8302
+                options.AllowSynchronousIO = true;
+            });
+
+            services.Configure<KestrelServerOptions>(options =>
+            {
+                // The Newtonsoft.json is not working without allowing synchronous IO.
+                // And at the moment we cannot switch to System.Text.Json because the GraphQl libraries are still using Newtonsoft.
+                // https://github.com/dotnet/aspnetcore/issues/8302
+                options.AllowSynchronousIO = true;
+            });
+
+            services.AddControllers().AddNewtonsoftJson(options =>
+            {
+                SetNewtonsoftSerializerSettings(options.SerializerSettings);
             });
 
             InjectDependencies(services);
@@ -98,7 +120,7 @@ namespace WebApplication
         /// </summary>
         /// <param name="app"></param>
         /// <param name="env"></param>
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -131,6 +153,15 @@ namespace WebApplication
                     context.Database.EnsureCreated();
                 }
             }
+        }
+
+        private void SetNewtonsoftSerializerSettings(JsonSerializerSettings serializerSettings)
+        {
+            serializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
+            serializerSettings.DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ss";
+            serializerSettings.ContractResolver = new DefaultContractResolver();
+            serializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+            serializerSettings.NullValueHandling = NullValueHandling.Ignore;
         }
     }
 }
